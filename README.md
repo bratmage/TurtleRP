@@ -43,6 +43,10 @@ Next Up
 
 ### Recently Done
 
+1.2.2
+- Extended Chatbox that allows messages past the 255 character limit now supports PARTY /p and RAID /r
+- Fixed bug where map dots would not appear in Ironforge.
+
 1.1.1
 
 - Directory, when ordered, now snaps user back to the top of the scrollbar
