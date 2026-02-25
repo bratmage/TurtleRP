@@ -415,15 +415,31 @@ function TurtleRP.splitByChunk(text, chunkSize)
 end
 
 -- Have to keep stupid 1.1.0 code because I made a boo boo
+-- bratmage // Modified to fix Ironforge coordinate bug. hopefully no new boo boos.
 function TurtleRP.pingWithLocationAndVersion(message)
-  local revisedMessage = message
-  message = message .. GetZoneText()
+  local oldContinent, oldZone = GetCurrentMapContinent(), GetCurrentMapZone()
+  SetMapToCurrentZone()
+  local zoneX, zoneY = GetPlayerMapPosition("player")
+  local zoneName = GetRealZoneText()
+  if oldContinent and oldContinent > 0 then
+    SetMapZoom(oldContinent, oldZone or 0)
+  end
+
+  message = message .. zoneName
   if TurtleRPSettings['share_location'] == "1" then
-    local zoneX, zoneY = GetPlayerMapPosition("player")
-    message = message .. "~" .. math.floor(zoneX * 10000)/10000 .. "~" .. math.floor(zoneY * 10000)/10000 .. "~1.1.0"
+    if (zoneX == 0 and zoneY == 0) then
+        if zoneName == "Ironforge" or zoneName == "Stormwind City" or zoneName == "Darnassus" or zoneName == "Orgrimmar" or zoneName == "Thunder Bluff" or zoneName == "Undercity" then
+            message = message .. "~0.5~0.5~1.1.0"
+        else
+            message = message .. "~false~false~1.1.0"
+        end
+    else
+      message = message .. "~" .. math.floor(zoneX * 10000)/10000 .. "~" .. math.floor(zoneY * 10000)/10000 .. "~1.1.0"
+    end
   else
     message = message .. "~false~false~1.1.0"
   end
+  
   TurtleRP.ttrpChatSend(message)
 end
 
