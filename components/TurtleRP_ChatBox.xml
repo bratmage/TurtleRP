@@ -81,30 +81,31 @@
           </Layer>
         </Layers>
         <Scripts>
-          <OnLoad>
-            local items = {
-              ["emote"] = "Emote",
-              ["say"] = "Say",
-              ["yell"] = "Yell"
-            }
-            UIDropDownMenu_Initialize(TurtleRP_ChatBox_ChatTypeDropdown, function()
-              for i, v in items do
-                local info = {}
-                info.text = v
-                info.value = i
-                info.arg1 = v
-                info.checked = false
-                info.menuList = i
-                info.hasArrow = false
-                info.func = function(val)
-                  TurtleRP_ChatBox_ChatTypeDropdown_Text:SetText(val)
-                  TurtleRP.currentChatType = val
-                  CloseDropDownMenus()
-                end
-                UIDropDownMenu_AddButton(info)
-              end
-            end)
-          </OnLoad>
+			<OnLoad>
+			  local items = {
+				{ id = "emote", name = "Emote" },
+				{ id = "say",   name = "Say" },
+				{ id = "party", name = "Party" },
+				{ id = "raid",  name = "Raid" },
+				{ id = "yell",  name = "Yell" }
+			  }
+			  
+			  UIDropDownMenu_Initialize(this, function()
+				for _, item in ipairs(items) do
+				  local info = {}
+				  info.text = item.name
+				  info.value = item.id
+				  info.checked = false
+				  local itemName = item.name
+				  info.func = function()
+					TurtleRP_ChatBox_ChatTypeDropdown_Text:SetText(itemName)
+					TurtleRP.currentChatType = itemName
+					CloseDropDownMenus()
+				  end
+				  UIDropDownMenu_AddButton(info)
+				end
+			  end)
+			</OnLoad>
         </Scripts>
       </Frame>
 
