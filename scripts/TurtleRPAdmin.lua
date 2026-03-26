@@ -232,4 +232,13 @@ function TurtleRP.renderIcons(iconOffset)
       end
     end
   end
+  function TurtleRP.ToggleChatNames()
+    if TurtleRPSettings["chat_names"] == "1" then
+        TurtleRPSettings["chat_names"] = "0"
+        TurtleRP_AdminSB_Content5_ChatNamesButton:SetChecked(false)
+    else
+        TurtleRPSettings["chat_names"] = "1"
+        TurtleRP_AdminSB_Content5_ChatNamesButton:SetChecked(true)
+    end
+end
 end
