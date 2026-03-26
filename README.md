@@ -1,19 +1,8 @@
-## Turtle RP Official
+## Turtle RP 2026
 
 Turtle's RP scene has been an integral party of the community since the earliest days of the network. This addon was forked and made official after numerous community requests for assistance moderating and growing the roleplay community.
 
-### Initial Release:
-- Handful of optimizations
-- Addition of a NSFW Profile Toggle
-- Addition of a "See NSFW Profiles" Toggle (DEFAULT: OFF)
-- Changed default behavior of "Show Map Location" to OFF.
-
 Many thanks from the team and community to those who will contribute to this addon, and those who did prior. Their notes are below.
-
-
-## TurtleRP Optimized
-
-TurtleRP has an issue that causes the game to freeze frequently. This is caused by the addon generating an extreme amount of memory garbage, triggering more garbage collections, which will freeze the game for its duration. It also uses a lot of CPU, reducing average framerate. This fork addresses these issues, likely reducing resource usage by 99%+, while preserving all the functionality of the addon.
 
 ## TurtleRP
 
@@ -23,9 +12,23 @@ For more information, visit [https://tempranova.github.io/turtlerp/](https://tem
 
 To archive from source code, use `git archive --output=TurtleRP-<v>.zip --prefix=TurtleRP/ HEAD`.
 
+## Version 1.3
+### - Character Name & Color now appear in chat windows!
+- This may be toggled on and off in the settings.
+### - A brand new Title field has been added!
+- No more long names. Titles appear before the name in the profile and the tooltip, but do not appear in chat.
+### - TurtleRP Map Icons now display IC/OOC!
+- Green icons if someone is IC, the old Grey/Purple is they are OOC. Make sure to start using your toggles!
+- Upon reaching Level 10, or logging in for the first time, a popup will appear prompting user to join the /rp chat channel.
+- Name 'usertag' in /rp (the bot we use in the Nordanaar RP discord!) no longer appears before message, only the discord handle.
+- Small bug fix regarding Alah'Thalas map tracking variable
+- Dev badge added. Say hi if you see me.
+
 ### To Do
 
 Tests
+
+- Want to add more icons, but currentVersion does not send outward, only downloads inward. This would lead to lua crashes if someone is not using an updates version of TRP. Not worth it yet.
 
 Bugs
 
