@@ -19,33 +19,14 @@ function TurtleRP.SetDirectoryButtonsActive(enable)
 end
 
 function sort_users_by_key(user1, user2, sort_key, sort_by_order)
-    local val1 = user1[sort_key]
-    local val2 = user2[sort_key]
-    if sort_key == "full_name" then
-        if user1["title"] and user1["title"] ~= "" then
-            val1 = user1["title"] .. " " .. (val1 or "")
-        end
-        if user2["title"] and user2["title"] ~= "" then
-            val2 = user2["title"] .. " " .. (val2 or "")
-        end
+    local online1 = (user1.status == "Online") and 1 or 0
+    local online2 = (user2.status == "Online") and 1 or 0
+    if online1 ~= online2 then
+        return online1 > online2
     end
-    if val1 ~= nil and val2 ~= nil then
-        if type(val1) == "string" then val1 = string.lower(val1) end
-        if type(val2) == "string" then val2 = string.lower(val2) end
-
-        if sort_by_order == 1 then
-            return val1 > val2
-        else
-            return val1 < val2
-        end
-    end
-    if val1 ~= nil then
-        return sort_by_order == 1
-    elseif val2 ~= nil then
-        return sort_by_order ~= 1
-    else
-        return false
-    end
+    local name1 = string.lower(user1.player_name or "")
+    local name2 = string.lower(user2.player_name or "")
+    return name1 < name2
 end
 ----
 -- Map Directory Display
