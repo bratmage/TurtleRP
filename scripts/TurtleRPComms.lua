@@ -147,26 +147,38 @@ function TurtleRP.checkTTRPChannel()
     end
   end
 end
+local recentRPRequests = {}
 
+function TurtleRP.RequestDirectoryProfileFromRPChat(playerName)
+    if not playerName or playerName == UnitName("player") then
+        return
+    end
+    local now = time()
+    if recentRPRequests[playerName] and recentRPRequests[playerName] > (now - 30) then
+        return
+    end
+    recentRPRequests[playerName] = now
+    TurtleRP.ttrpChatSend("M:" .. playerName .. "~NO_KEY")
+end
 function TurtleRP.communication_events()
-
   TurtleRP_Target_DescriptionButton:SetScript("OnClick", function()
     TurtleRP.OpenProfile()
-
     if UnitName("target") == UnitName("player") then
       TurtleRP.buildDescription(UnitName("player"))
     else
       TurtleRP.sendRequestForData("D", UnitName("target"))
     end
-
   end)
-
   local CheckMessages = CreateFrame("Frame", "TurtleRPMessageScanner")
   CheckMessages:RegisterEvent("CHAT_MSG_CHANNEL")
   CheckMessages:SetScript("OnEvent", function()
     if event == "CHAT_MSG_CHANNEL" then
-      if string.lower(arg9) == string.lower(TurtleRP.channelName) then
-        TurtleRP.checkChatMessage(TurtleRP.DrunkDecode(arg1), arg2)
+      local channelName = string.lower(arg9 or "")
+      local sender = arg2
+      if channelName == string.lower(TurtleRP.channelName) then
+        TurtleRP.checkChatMessage(TurtleRP.DrunkDecode(arg1), sender)
+      elseif channelName == "rp" then
+        TurtleRP.RequestDirectoryProfileFromRPChat(sender)
       end
     end
   end)
@@ -348,6 +360,7 @@ function TurtleRP.recieveAndStoreData(dataPrefix, playerName, msg)
       TurtleRP.displayData(dataPrefix, playerName)
     end
   end
+  TurtleRP.RefreshDirectoryIfVisible()
 end
 
 local pingSplitTable = {}
@@ -378,6 +391,7 @@ function TurtleRP.recievePingInformation(playerName, msg)
     if zone == TurtleRP.GetZones(GetCurrentMapContinent())[GetCurrentMapZone()] then
         TurtleRP.show_player_locations()
     end
+	TurtleRP.RefreshDirectoryIfVisible()
 end
 
 function TurtleRP.displayData(dataPrefix, playerName)
@@ -463,6 +477,13 @@ function TurtleRP.DrunkDecode(text)
 	text = strGsub(text, "§", "S")
 	text = strGsub(text, DrunkSuffix, "") -- likely only needed if decoding an entire message
 	return text
+end
+
+function TurtleRP.RefreshDirectoryIfVisible()
+    if TurtleRP_DirectoryFrame and TurtleRP_DirectoryFrame:IsVisible() then
+        TurtleRP.updateDirectorySearch()
+        TurtleRP.Directory_ScrollBar_Update()
+    end
 end
 
 function TurtleRP.ttrpChatSend(message)
