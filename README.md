@@ -24,6 +24,7 @@ To archive from source code, use `git archive --output=TurtleRP-<v>.zip --prefix
 - Small bug fix regarding Alah'Thalas map tracking variable
 - Dev badge added. Say hi if you see me.
 
+---
 ### To Do
 
 Tests
@@ -42,7 +43,7 @@ Minor Bugs
 - Custom colors for emotes get overwritten
 - Slight adjustment in PvP text padding/spacing when icon added while PvP enabled
 
-Next Up
+---
 
 ### Recently Done
 
