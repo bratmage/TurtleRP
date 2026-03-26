@@ -18,9 +18,20 @@ function TurtleRP.SetDirectoryButtonsActive(enable)
   end
 end
 
-
--- Quick Helper Function to determine if user has key and then performs evaluation
 function sort_users_by_key(user1, user2, sort_key, sort_by_order)
+    local val1 = user1[sort_key]
+    local val2 = user2[sort_key]
+    if sort_key == "full_name" then
+        if user1["title"] and user1["title"] ~= "" then val1 = user1["title"] .. " " .. val1 end
+        if user2["title"] and user2["title"] ~= "" then val2 = user2["title"] .. " " .. val2 end
+    end
+    if val1 ~= nil and val2 ~= nil then
+      if sort_by_order == 1 then
+        return val1 > val2
+      else
+        return val1 < val2
+      end
+    end
   -- if User 1 has a key proceed
     if not (user1[sort_key] == nil) then
       -- If User 2 also has a key proceed
@@ -83,7 +94,7 @@ function TurtleRP.show_player_locations()
     frame:Hide()
   end
   local onlinePlayers = TurtleRP.get_players_online()
-  local frameCount = 0
+  local frameCount = 1
   local zonesByID = TurtleRP.GetZones(GetCurrentMapContinent())
   local currentZone = GetCurrentMapZone()
   local selfName = UnitName("player")
@@ -95,16 +106,25 @@ function TurtleRP.show_player_locations()
       if zone == zonesByID[currentZone] and zoneX and zoneY then
         local playerPositionFrame = locationFrames[frameCount]
         if playerPositionFrame == nil then
-            playerPositionFrame = CreateFrame("Frame", "TurtleRP_MapPlayerPosition_" .. frameCount, WorldMapDetailFrame, "TurtleRP_WorldMapUnitTemplate")
-            table.insert(TurtleRP.locationFrames, playerPositionFrame)
+          playerPositionFrame = CreateFrame("Frame", "TurtleRP_MapPlayerPosition_" .. frameCount, WorldMapDetailFrame, "TurtleRP_WorldMapUnitTemplate")
+          locationFrames[frameCount] = playerPositionFrame
         end
         local mapWidth = WorldMapDetailFrame:GetWidth()
         local mapHeight = WorldMapDetailFrame:GetHeight()
         playerPositionFrame.full_name = charName
-        if character['full_name'] ~= nil and character['full_name'] ~= "" then
-            playerPositionFrame.full_name = character['full_name']
+        if character["full_name"] ~= nil and character["full_name"] ~= "" then
+          playerPositionFrame.full_name = character["full_name"]
         end
+        playerPositionFrame:ClearAllPoints()
         playerPositionFrame:SetPoint("CENTER", WorldMapDetailFrame, "TOPLEFT", zoneX * mapWidth, zoneY * mapHeight * -1)
+        local icon = getglobal(playerPositionFrame:GetName() .. "Icon")
+        if icon then
+          if character["currently_ic"] == "1" then
+            icon:SetTexture("Interface\\Addons\\TurtleRP\\images\\WorldMapPlayerIconIC")
+          else
+            icon:SetTexture("Interface\\Addons\\TurtleRP\\images\\WorldMapPlayerIconTRP")
+          end
+        end
         playerPositionFrame:Show()
         frameCount = frameCount + 1
       end
@@ -132,14 +152,17 @@ function TurtleRP.updateDirectorySearch()
                     totalDirectoryOnline = totalDirectoryOnline + 1
                 end
             end
-
-
             if TurtleRPCharacters[i]['full_name'] == nil then
                 TurtleRPCharacters[i]['full_name'] = ""
             end
             local resultShown = true
+            -- Search Logic
             if TurtleRP.searchTerm ~= "" then
-                if string.find(string.lower(i), string.lower(TurtleRP.searchTerm)) == nil and string.find(string.lower(profile['full_name']), string.lower(TurtleRP.searchTerm)) == nil then
+                local nameMatch = string.find(string.lower(profile['full_name'] or ""), string.lower(TurtleRP.searchTerm))
+                local titleMatch = profile['title'] and string.find(string.lower(profile['title']), string.lower(TurtleRP.searchTerm))
+                local zoneMatch = string.find(string.lower(profile['zone'] or ""), string.lower(TurtleRP.searchTerm))
+
+                if not (nameMatch or titleMatch or zoneMatch) then
                     resultShown = false
                 end
             end
@@ -148,6 +171,7 @@ function TurtleRP.updateDirectorySearch()
                 searchResults[currentArrayNumber]['player_name'] = i
                 searchResults[currentArrayNumber]['status'] = "Offline"
                 searchResults[currentArrayNumber]['zone'] = profile['zone'] and profile['zone'] or ""
+                
                 if TurtleRPQueryablePlayers[i] then
                     if type(TurtleRPQueryablePlayers[i]) == "number" then
                         if TurtleRPQueryablePlayers[i] > (currentTime - 65) then
@@ -159,12 +183,10 @@ function TurtleRP.updateDirectorySearch()
             end
         end
     end
-
     if TurtleRP.sortByKey ~= nil then
       table.sort(searchResults, function(a, b) return sort_users_by_key(a, b, TurtleRP.sortByKey, TurtleRP.sortByOrder) end)
     end
     TurtleRP.DirectorySearchResults = searchResults
-
     TurtleRP_DirectoryFrame_Directory_Total:SetText(totalDirectoryChars .. " adventurers found (" .. totalDirectoryOnline .. " online)")
 end
 
