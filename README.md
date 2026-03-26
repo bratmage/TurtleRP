@@ -36,7 +36,8 @@ Tests
 
 Bugs
 
-- RP style tab forced to right (PFuI)
+- All of the profile downloading in /rp is causing a lot of chat throttle notifications.
+- Shift Clicking displays "full_name" instead of "player_name"
 - If you have Profile open, and a description comes back in the chat, it'll obscure the profile
 
 Minor Bugs
