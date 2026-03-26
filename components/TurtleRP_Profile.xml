@@ -186,6 +186,17 @@
                 </Anchor>
               </Anchors>
             </FontString>
+			<!-- Dev Badge -->
+			<FontString name="$parent_DevText" inherits="GameTooltipHeaderText" text="">
+			  <Anchors>
+				<Anchor point="TOPRIGHT" relativeTo="$parent" relativePoint="TOPRIGHT">
+				  <Offset>
+					<AbsDimension x="-10" y="-25"/>
+				  </Offset>
+				</Anchor>
+			  </Anchors>
+			  <JustifyH>RIGHT</JustifyH>
+			</FontString>
             <!-- IC or OOC -->
             <FontString name="$parent_ICOOC" inherits="GameTooltipHeaderText" text="Currently IC">
               <Anchors>
