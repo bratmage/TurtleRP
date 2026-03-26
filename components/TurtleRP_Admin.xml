@@ -188,51 +188,20 @@
         </Anchors>
         <Layers>
     			<Layer level="OVERLAY">
-            <!-- Flavour Text -->
-            <FontString name="$parent_FlavourText" inherits="OVERLAY" font="Fonts\FRIZQT__.ttf" text="Greetings, adventurer! Tell us about yourself...">
-              <Anchors>
-                <Anchor point="TOPLEFT" relativeTo="$parent" relativePoint="TOPLEFT">
-                  <Offset>
-                    <AbsDimension x="0" y="0" />
-                  </Offset>
-                </Anchor>
-              </Anchors>
-              <FontHeight>
-                <AbsValue val="12" />
-              </FontHeight>
-              <Color r="0" g="0" b="0" />
-            </FontString>
-            <!-- HR -->
-            <Texture name="$parent_hr">
-              <Anchors>
-                <Anchor point="LEFT" relativeTo="$parent_FlavourText" relativePoint="LEFT">
-                  <Offset>
-                    <AbsDimension x="0" y="-15" />
-                  </Offset>
-                </Anchor>
-              </Anchors>
-              <Size>
-                <AbsDimension x="300" y="1"/>
-              </Size>
-              <Anchors>
-                <Anchor point="CENTER" />
-              </Anchors>
-              <Color r="0" g="0" b="0" a="0.3" />
-            </Texture>
-            <!-- NSFW Text -->
-            <FontString name="$parent_NSFWText" inherits="OVERLAY" font="Fonts\FRIZQT__.ttf" text="NSFW Profile">
-              <Anchors>
-                <Anchor point="LEFT" relativeTo="$parent_hr" relativePoint="LEFT">
-                  <Offset>
-                    <AbsDimension x="0" y="-15" />
-                  </Offset>
-                </Anchor>
-              </Anchors>
-              <FontHeight>
-                <AbsValue val="10" />
-              </FontHeight>
-              <Color r="0" g="0" b="0" />
-            </FontString>
+			<!-- NSFW Text -->
+			<FontString name="$parent_NSFWText" inherits="OVERLAY" font="Fonts\FRIZQT__.ttf" text="NSFW Profile">
+			  <Anchors>
+				<Anchor point="TOPLEFT" relativeTo="$parent" relativePoint="TOPLEFT">
+				  <Offset>
+					<AbsDimension x="0" y="0" />
+				  </Offset>
+				</Anchor>
+			  </Anchors>
+			  <FontHeight>
+				<AbsValue val="10" />
+			  </FontHeight>
+			  <Color r="0" g="0" b="0" />
+			</FontString>
             <!-- Name Text -->
             <FontString name="$parent_NameText" inherits="OVERLAY" font="Fonts\FRIZQT__.ttf" text="Character Title and Name">
               <Anchors>
@@ -304,7 +273,7 @@
               <Color r="0" g="0" b="0" />
             </FontString>
             <!-- Currently IC Text -->
-            <FontString name="$parent_CurrentlyICText" inherits="OVERLAY" font="Fonts\FRIZQT__.ttf" text="IC?">
+			<FontString name="$parent_CurrentlyICText" inherits="OVERLAY" font="Fonts\FRIZQT__.ttf" text="IC?">
               <Anchors>
                 <Anchor point="LEFT" relativeTo="$parent_ClassColorText" relativePoint="RIGHT">
                   <Offset>
@@ -317,10 +286,24 @@
               </FontHeight>
               <Color r="0" g="0" b="0" />
             </FontString>
+            <!-- Title Text -->
+            <FontString name="$parent_TitleText" inherits="OVERLAY" font="Fonts\FRIZQT__.ttf" text="Title">
+              <Anchors>
+                <Anchor point="LEFT" relativeTo="$parent_ClassText" relativePoint="LEFT">
+                  <Offset>
+                    <AbsDimension x="0" y="-40" />
+                  </Offset>
+                </Anchor>
+              </Anchors>
+              <FontHeight>
+                <AbsValue val="10" />
+              </FontHeight>
+              <Color r="0" g="0" b="0" />
+            </FontString>
             <!-- IC Info Text -->
             <FontString name="$parent_ICInfoText" inherits="OVERLAY" font="Fonts\FRIZQT__.ttf" text="IC Info">
               <Anchors>
-                <Anchor point="LEFT" relativeTo="$parent_ClassText" relativePoint="LEFT">
+                <Anchor point="LEFT" relativeTo="$parent_TitleText" relativePoint="LEFT">
                   <Offset>
                     <AbsDimension x="0" y="-40" />
                   </Offset>
@@ -545,13 +528,32 @@
               </OnLoad>
             </Scripts>
           </EditBox>
-          <!-- Last Name Input Box -->
+          <!-- Class Input Box -->
           <EditBox name="$parent_ClassInput" alpha="0.85" inherits="InputBoxTemplate" visible="true" enableMouse="true" autoFocus="false">
             <Size>
               <AbsDimension x="150" y="20" />
             </Size>
             <Anchors>
               <Anchor point="LEFT" relativeTo="$parent_ClassText" relativePoint="LEFT">
+                <Offset>
+                  <AbsDimension x="5" y="-20" />
+                </Offset>
+              </Anchor>
+            </Anchors>
+            <FontString inherits="ChatFontNormal" />
+            <Scripts>
+              <OnLoad>
+                this:SetMaxLetters(15)
+              </OnLoad>
+            </Scripts>
+          </EditBox>
+		  	 <!-- Title Input Box -->
+			<EditBox name="$parent_TitleInput" alpha="0.85" inherits="InputBoxTemplate" visible="true" enableMouse="true" autoFocus="false">
+            <Size>
+              <AbsDimension x="150" y="20" />
+            </Size>
+            <Anchors>
+              <Anchor point="LEFT" relativeTo="$parent_TitleText" relativePoint="LEFT">
                 <Offset>
                   <AbsDimension x="5" y="-20" />
                 </Offset>
@@ -1901,21 +1903,19 @@
               <Color r="0" g="0" b="0" />
             </FontString>
             <!-- Show NSFW profiles text -->
-            <FontString name="$parent_ShowNSFWText" inherits="OVERLAY" font="Fonts\FRIZQT__.ttf" text="Show NSFW profiles">
-              <Anchors>
-                <Anchor point="TOPLEFT" relativeTo="$parent_ShareLocText" relativePoint="BOTTOMLEFT">
-                  <Offset>
-                    <AbsDimension x="0" y="-10" />
-                  </Offset>
-                </Anchor>
-              </Anchors>
-              <FontHeight>
-                <AbsValue val="10" />
-              </FontHeight>
-              <Color r="0" g="0" b="0" />
-            </FontString>
-            <!-- Show NSFW profiles text -->
-            <FontString name="$parent_SelectProfileText" inherits="OVERLAY" font="Fonts\FRIZQT__.ttf" text="Select Active Profile">
+			<FontString name="$parent_ShowNSFWText" inherits="OVERLAY" font="Fonts\FRIZQT__.ttf" text="Show NSFW profiles">
+						  <Anchors>
+							<Anchor point="TOPLEFT" relativeTo="$parent_ShareLocText" relativePoint="BOTTOMLEFT">
+							  <Offset>
+								<AbsDimension x="0" y="-10" />
+							  </Offset>
+							</Anchor>
+						  </Anchors>
+						  <FontHeight><AbsValue val="10" /></FontHeight>
+						  <Color r="0" g="0" b="0" />
+						</FontString>
+			<!-- Colored Names in Chat text  -->
+            <FontString name="$parent_ChatNamesText" inherits="OVERLAY" font="Fonts\FRIZQT__.ttf" text="RP Names in Chat">
               <Anchors>
                 <Anchor point="TOPLEFT" relativeTo="$parent_ShowNSFWText" relativePoint="BOTTOMLEFT">
                   <Offset>
@@ -1923,9 +1923,19 @@
                   </Offset>
                 </Anchor>
               </Anchors>
-              <FontHeight>
-                <AbsValue val="10" />
-              </FontHeight>
+              <FontHeight><AbsValue val="10" /></FontHeight>
+              <Color r="0" g="0" b="0" />
+            </FontString>
+			<!-- Select Profile text -->
+            <FontString name="$parent_SelectProfileText" inherits="OVERLAY" font="Fonts\FRIZQT__.ttf" text="Select Active Profile">
+              <Anchors>
+                <Anchor point="TOPLEFT" relativeTo="$parent_ChatNamesText" relativePoint="BOTTOMLEFT">
+                  <Offset>
+                    <AbsDimension x="0" y="-10" />
+                  </Offset>
+                </Anchor>
+              </Anchors>
+              <FontHeight><AbsValue val="10" /></FontHeight>
               <Color r="0" g="0" b="0" />
             </FontString>
           </Layer>
@@ -2116,7 +2126,29 @@
                 end
               </OnClick>
             </Scripts>
+          <!-- Show Name/Color button -->
           </CheckButton>
+			<CheckButton name="$parent_ChatNamesButton" inherits="UICheckButtonTemplate">
+				<Size>
+				  <AbsDimension x="25" y="25" />
+				</Size>
+				<Anchors>
+				  <Anchor point="RIGHT" relativeTo="$parent_ShowNSFWButton" relativePoint="RIGHT">
+					<Offset>
+					  <AbsDimension x="0" y="-20"/>
+					</Offset>
+				  </Anchor>
+				</Anchors>
+				<Scripts>
+				  <OnClick>
+					if TurtleRPSettings["chat_names"] == "0" then
+					  TurtleRPSettings["chat_names"] = "1"
+					else
+					  TurtleRPSettings["chat_names"] = "0"
+					end
+				  </OnClick>
+				</Scripts>
+			  </CheckButton>
         <Frame name="$parent_ProfileDropdown" inherits="UIDropDownMenuTemplate" enableMouse="true">
           <Size>
             <AbsDimension x="70" y="20" />
