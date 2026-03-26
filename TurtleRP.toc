@@ -1,5 +1,5 @@
 ## Interface: 11200
-## Title: |cffabd473Turtle RP Official
+## Title: |cffabd473Turtle RP 2026
 ## Author: luskanek / OldManAlpha / tempranova / Drixi / Vee / Zara / bratmage
 ## Version: 1.2.2
 ## Notes: RP Addon custom made for Turtle WoW
