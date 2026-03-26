@@ -9,7 +9,7 @@
 TurtleRP.TestMode = 0
 
 -- Dev
-TurtleRP.currentVersion = "1.1.1"
+TurtleRP.currentVersion = "1.3"
 TurtleRP.latestVersion = TurtleRP.currentVersion
 -- Chat
 TurtleRP.channelName = "TTRP"
@@ -69,6 +69,7 @@ function TurtleRP:OnEvent()
     TurtleRPCharacterInfoTemplate["keyM"] = TurtleRP.randomchars()
     TurtleRPCharacterInfoTemplate["nsfw"] = "0"
     TurtleRPCharacterInfoTemplate["icon"] = ""
+	TurtleRPCharacterInfoTemplate["title"] = ""
     TurtleRPCharacterInfoTemplate["full_name"] = UnitName("player")
     TurtleRPCharacterInfoTemplate["race"] = UnitRace("player")
     TurtleRPCharacterInfoTemplate["class"] = UnitClass("player")
@@ -110,7 +111,7 @@ function TurtleRP:OnEvent()
     TurtleRPSettingsTemplate["hide_minimap_icon"] = "1"
     TurtleRPSettingsTemplate["share_location"] = "0"
     TurtleRPSettingsTemplate["show_nsfw"] = "0"
-    -- Selected Player Profile
+	TurtleRPSettingsTemplate["chat_names"] = "1"
     TurtleRPSettingsTemplate["selected_profile"] = "0"
 
 
@@ -182,6 +183,7 @@ function TurtleRP:OnEvent()
     TurtleRP.send_ping_message()
 
     TurtleRP.populate_interface_user_data()
+	TurtleRP_AdminSB_Content5_ChatNamesButton:SetChecked(TurtleRPSettings["chat_names"] == "1" and true or false)
 
     TurtleRP.tooltip_events()
     TurtleRP.mouseover_and_target_events()
@@ -221,8 +223,12 @@ TurtleRP_Parent:SetScript("OnEvent", TurtleRP.OnEvent)
 -----
 function TurtleRP.SetTargetNameFrameWidths(playerName)
   if TurtleRPCharacters[playerName] then
-    local fullName = TurtleRPCharacters[playerName]["full_name"]
-    TurtleRP_Target_TargetName:SetText(fullName)
+    local char = TurtleRPCharacters[playerName]
+    local displayName = char["full_name"]
+    if char["title"] and char["title"] ~= "" then
+      displayName = char["title"] .. " " .. displayName
+    end
+    TurtleRP_Target_TargetName:SetText(displayName)
     local stringWidth = TurtleRP_Target_TargetName:GetStringWidth()
     if stringWidth < 100 then
       stringWidth = 100
@@ -276,6 +282,7 @@ function TurtleRP.populate_interface_user_data()
   TurtleRP_AdminSB_Content1_NameInput:SetText(TurtleRPCharacterInfo["full_name"])
   TurtleRP_AdminSB_Content1_RaceInput:SetText(TurtleRPCharacterInfo["race"])
   TurtleRP_AdminSB_Content1_ClassInput:SetText(TurtleRPCharacterInfo["class"])
+  TurtleRP_AdminSB_Content1_TitleInput:SetText(TurtleRPCharacterInfo["title"])
   local r, g, b = TurtleRP.hex2rgb(TurtleRPCharacterInfo['class_color'])
   TurtleRP_AdminSB_Content1_ClassColorButton:SetBackdropColor(r, g, b)
   TurtleRP_AdminSB_Content1_ICScrollBox_ICInfoInput:SetText(TurtleRPCharacterInfo["ic_info"])
@@ -377,7 +384,6 @@ function TurtleRP.SetProfileDropdown()
       UIDropDownMenu_SetSelectedValue(v, thisValue)
     end
   end
-
 -----
 -- Saving
 -----
@@ -434,6 +440,9 @@ function TurtleRP.save_general()
   local class = TurtleRP_AdminSB_Content1_ClassInput:GetText()
   TurtleRP_AdminSB_Content1_ClassInput:ClearFocus()
   TurtleRPCharacterInfo["class"] = TurtleRP.validateBeforeSaving(class)
+  local title = TurtleRP_AdminSB_Content1_TitleInput:GetText()
+  TurtleRP_AdminSB_Content1_TitleInput:ClearFocus()
+  TurtleRPCharacterInfo["title"] = TurtleRP.validateBeforeSaving(title)
   local ic_info = TurtleRP_AdminSB_Content1_ICScrollBox_ICInfoInput:GetText()
   TurtleRP_AdminSB_Content1_ICScrollBox_ICInfoInput:ClearFocus()
   TurtleRPCharacterInfo["ic_info"] = TurtleRP.validateBeforeSaving(ic_info)
@@ -508,6 +517,84 @@ function TurtleRP.canChat()
     return UnitLevel("player") >= TurtleRP.minChatLevel
 end
 
+-- Offer to join /rp channel upon reaching level 10, or first login after installing/update.
+function TurtleRP.CheckLevelForChannel(newLevel, isLogin)
+    local id, name = GetChannelName("rp")
+    if id > 0 then 
+        TurtleRPSettings["seen_rp_prompt"] = "1"
+        return 
+    end
+    if newLevel >= 10 and TurtleRPSettings["seen_rp_prompt"] ~= "1" then
+        local delay = isLogin and 30 or 10;
+        
+        local timerFrame = CreateFrame("Frame");
+        timerFrame:SetScript("OnUpdate", function()
+            delay = delay - arg1; 
+            if delay <= 0 then
+                TurtleRP.ShowRPPopup(isLogin);
+                this:Hide(); 
+                this:SetScript("OnUpdate", nil);
+            end
+        end);
+    end
+end
+
+function TurtleRP.ShowRPPopup(isLogin)
+    local id, name = GetChannelName("rp")
+    if id > 0 then 
+        TurtleRPSettings["seen_rp_prompt"] = "1"
+        return 
+    end
+    local popupText = "You've reached level 10! Would you like to join the RP channel to find other roleplayers?";
+    if isLogin then
+        popupText = "Thank you for installing TurtleRP! Would you like to join the global /rp channel to find other roleplayers?";
+    end
+
+    StaticPopupDialogs["TTRP_JOIN_PROMPT"] = {
+        text = popupText,
+        button1 = "Join /rp",
+        button2 = "Maybe Later",
+        OnAccept = function()
+            JoinChannelByName("rp")
+            ChatFrame_AddChannel(ChatFrame1, "rp")
+            TurtleRPSettings["seen_rp_prompt"] = "1"
+            DEFAULT_CHAT_FRAME:AddMessage("|cff00ff00TurtleRP: Joined /rp channel. You may always leave with /leave rp |r")
+        end,
+        OnCancel = function()
+            TurtleRPSettings["seen_rp_prompt"] = "1" 
+        end,
+        timeout = 0,
+        whileDead = 1,
+        hideOnEscape = 1,
+    };
+    StaticPopup_Show("TTRP_JOIN_PROMPT");
+end
+--just a debugging command
+SLASH_RPRESET1 = "/rpreset";
+SlashCmdList["RPRESET"] = function(msg)
+    TurtleRPSettings["seen_rp_prompt"] = "0";
+    DEFAULT_CHAT_FRAME:AddMessage("|cff00ff00TurtleRP: RP Channel prompt has been reset. It will appear again on next login or level up.|r");
+end
+  -- i am so vain
+function TurtleRP.IsDevProfile(playerName)
+  if not playerName or playerName == "" then
+    return false
+  end
+  local function normalize(str)
+    str = string.lower(str or "")
+    str = string.gsub(str, "%s+", "")
+    return str
+  end
+  local realmName = normalize(GetRealmName())
+  local loweredName = normalize(playerName)
+  if realmName ~= "nordanaar" then
+    return false
+  end
+  return loweredName == "prynn" or loweredName == "bratmage"
+end
+function TurtleRP.GetDevBadgeText()
+  return "|cff5bcefaT|cff70d4fbu|cff84dafbr|cff98e0fct|cffade6fcl|cffc2edfde|cffd6f3feR|cffeaf9feP|cffffffff |cffffffffD|cfffde8ede|cfffbd2e3v|cfff9bdd9e|cfff7a7cfl|cfff591c5o|cfff37bbbp|cfff165b1e|cfff04fa7r"
+end
 -----
 -- Utility
 -----
@@ -575,6 +662,62 @@ function TurtleRP.cleanDirectory()
     end
   end
 end
+-- replacing the IGN with turtle rp name, using the full_name variable
+function TurtleRP.ReplaceNamesInChat(text)
+    if not text or not TurtleRPCharacters then return text end
+    if TurtleRPSettings["chat_names"] ~= "1" then return text end
+    local pattern = "(|Hplayer:([^:]+)|h%[)([^%]]+)(%]%|h)"
+    return string.gsub(text, pattern, function(prefix, rawName, displayedName, suffix)
+        -- We have a bot in the Nordanaar rp discord named usertag. this removes the name to keep it a little more legible.
+        if strlower(rawName) == "usertag" then
+            return prefix .. "" .. suffix
+        end
+        local character = TurtleRPCharacters[rawName]
+        if character and character.full_name and character.full_name ~= "" then
+            local nameToUse = character.full_name
+            -- im selfish and want to keep my pretty custom gradiant
+            local hasColor = string.find(nameToUse, "|[cC][fF][fF]")
+
+            if not hasColor and character.class_color and character.class_color ~= "" then
+                return prefix .. "|cff" .. character.class_color .. nameToUse .. "|r" .. suffix
+            else
+                return prefix .. nameToUse .. suffix
+            end
+        end
+        return prefix .. displayedName .. suffix
+    end)
+end
+function TurtleRP.HookChatFrames()
+    for i = 1, 7 do
+        local frame = getglobal("ChatFrame" .. i)
+        if frame and not frame.TurtleRPHooked then
+            local originalAddMessage = frame.AddMessage
+            frame.AddMessage = function(self, text, r, g, b, id)
+                text = TurtleRP.ReplaceNamesInChat(text)
+                originalAddMessage(self, text, r, g, b, id)
+            end
+            frame.TurtleRPHooked = true
+        end
+    end
+end
+
+local f = CreateFrame("Frame")
+f:RegisterEvent("VARIABLES_LOADED")
+f:RegisterEvent("PLAYER_LEVEL_UP")
+f:RegisterEvent("PLAYER_ENTERING_WORLD")
+f:SetScript("OnEvent", function()
+    if event == "VARIABLES_LOADED" then
+        TurtleRP.HookChatFrames() 
+        if TurtleRP.OnLoad then
+            TurtleRP.OnLoad()
+        end
+    elseif event == "PLAYER_LEVEL_UP" then
+        TurtleRP.CheckLevelForChannel(arg1, false)
+    elseif event == "PLAYER_ENTERING_WORLD" then
+        TurtleRP.HookChatFrames()
+        TurtleRP.CheckLevelForChannel(UnitLevel("player"), true)
+    end
+end)
 
 function TurtleRP.log(msg)
   DEFAULT_CHAT_FRAME:AddMessage(msg)
