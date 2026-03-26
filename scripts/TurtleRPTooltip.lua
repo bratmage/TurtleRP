@@ -115,6 +115,9 @@ function TurtleRP.buildTooltip(playerName, targetType)
   -- Getting details for character
   local nsfw            = locallyRetrievable and characterInfo["nsfw"] or nil
   local fullName        = locallyRetrievable and characterInfo["full_name"] or UnitName(targetType)
+  if locallyRetrievable and characterInfo["title"] and characterInfo["title"] ~= "" then
+    fullName = characterInfo["title"] .. " " .. fullName
+  end
   local race            = locallyRetrievable and characterInfo["race"] or UnitRace(targetType)
   local class           = locallyRetrievable and characterInfo["class"] or UnitClass(targetType)
   local class_color     = locallyRetrievable and characterInfo['class_color'] or TurtleRPClassData[class][4]
@@ -207,6 +210,16 @@ function TurtleRP.buildTooltip(playerName, targetType)
     getglobal("GameTooltipTextLeft"..l):SetText(raceAndClassText)
     getglobal("GameTooltipTextRight"..l):Show()
     getglobal("GameTooltipTextRight"..l):SetText(levelAndStatusText)
+  end
+    if TurtleRP.IsDevProfile(playerName) then
+    l = l + 1
+    if getglobal("GameTooltipTextLeft"..l):GetText() == nil then
+      TurtleRP.gameTooltip:AddLine(TurtleRP.GetDevBadgeText(), 1, 1, 1)
+    else
+      getglobal("GameTooltipTextLeft"..l):SetText(TurtleRP.GetDevBadgeText())
+      getglobal("GameTooltipTextRight"..l):SetText("")
+      getglobal("GameTooltipTextRight"..l):Hide()
+    end
   end
 
   -- Stuff only available for TTRP folks
