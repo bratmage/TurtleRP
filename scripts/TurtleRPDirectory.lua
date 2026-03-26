@@ -22,53 +22,31 @@ function sort_users_by_key(user1, user2, sort_key, sort_by_order)
     local val1 = user1[sort_key]
     local val2 = user2[sort_key]
     if sort_key == "full_name" then
-        if user1["title"] and user1["title"] ~= "" then val1 = user1["title"] .. " " .. val1 end
-        if user2["title"] and user2["title"] ~= "" then val2 = user2["title"] .. " " .. val2 end
+        if user1["title"] and user1["title"] ~= "" then
+            val1 = user1["title"] .. " " .. (val1 or "")
+        end
+        if user2["title"] and user2["title"] ~= "" then
+            val2 = user2["title"] .. " " .. (val2 or "")
+        end
     end
     if val1 ~= nil and val2 ~= nil then
-      if sort_by_order == 1 then
-        return val1 > val2
-      else
-        return val1 < val2
-      end
-    end
-  -- if User 1 has a key proceed
-    if not (user1[sort_key] == nil) then
-      -- If User 2 also has a key proceed
-      if not (user2[sort_key] == nil) then
-        -- If sort is descending, do greater than
-        if sort_by_order == 1 then
-          return user1[sort_key] > user2[sort_key]
-        else
-          -- Less than if sort is ascending
-          return user1[sort_key] < user2[sort_key]
-        end
-      else
-        -- If user 2 does not have a key but user 1 does return true if descending
-        if sort_by_order == 1 then
-          return true
-        else
-        -- return false if not
-          return false
-        end
-      end
-    else
-      -- If user 1 doesn't have a key but user 2 does have a key
-      if not (user2[sort_key] == nil) then
-        -- return false if descending
-        if sort_by_order == 1 then
-          return false
-        else
-          -- and return true if ascending
-          return true
-        end
-      -- Final Catch if neither has a key, just return false
-      else
-        return false
-      end
-    end
-  end
+        if type(val1) == "string" then val1 = string.lower(val1) end
+        if type(val2) == "string" then val2 = string.lower(val2) end
 
+        if sort_by_order == 1 then
+            return val1 > val2
+        else
+            return val1 < val2
+        end
+    end
+    if val1 ~= nil then
+        return sort_by_order == 1
+    elseif val2 ~= nil then
+        return sort_by_order ~= 1
+    else
+        return false
+    end
+end
 ----
 -- Map Directory Display
 ----
@@ -144,50 +122,52 @@ function TurtleRP.updateDirectorySearch()
     local currentArrayNumber = 1
     local showNSFW = TurtleRPSettings["show_nsfw"] == "1"
     local currentTime = time()
-    for i, profile in TurtleRPCharacters do
-        if profile and (showNSFW or profile['nsfw'] == "0" or profile['nsfw'] == "" or profile['nsfw'] == nil) then
+    local lowerSearch = string.lower(TurtleRP.searchTerm or "")
+    for playerName, profile in pairs(TurtleRPCharacters) do
+        if profile and (showNSFW or profile["nsfw"] == "0" or profile["nsfw"] == "" or profile["nsfw"] == nil) then
             totalDirectoryChars = totalDirectoryChars + 1
-            if type(TurtleRPQueryablePlayers[i]) == "number" then
-                if TurtleRPQueryablePlayers[i] > (currentTime - 65) then
-                    totalDirectoryOnline = totalDirectoryOnline + 1
-                end
+            local isOnline = false
+            if type(TurtleRPQueryablePlayers[playerName]) == "number" and TurtleRPQueryablePlayers[playerName] > (currentTime - 65) then
+                totalDirectoryOnline = totalDirectoryOnline + 1
+                isOnline = true
             end
-            if TurtleRPCharacters[i]['full_name'] == nil then
-                TurtleRPCharacters[i]['full_name'] = ""
-            end
+            local fullName = profile["full_name"] or ""
+            local title = profile["title"] or ""
+            local zone = profile["zone"] or ""
             local resultShown = true
-            -- Search Logic
-            if TurtleRP.searchTerm ~= "" then
-                local nameMatch = string.find(string.lower(profile['full_name'] or ""), string.lower(TurtleRP.searchTerm))
-                local titleMatch = profile['title'] and string.find(string.lower(profile['title']), string.lower(TurtleRP.searchTerm))
-                local zoneMatch = string.find(string.lower(profile['zone'] or ""), string.lower(TurtleRP.searchTerm))
-
+            if lowerSearch ~= "" then
+                local fullNameLower = string.lower(fullName)
+                local titleLower = string.lower(title)
+                local zoneLower = string.lower(zone)
+                local nameMatch = string.find(fullNameLower, lowerSearch, 1, true)
+                local titleMatch = string.find(titleLower, lowerSearch, 1, true)
+                local zoneMatch = string.find(zoneLower, lowerSearch, 1, true)
                 if not (nameMatch or titleMatch or zoneMatch) then
                     resultShown = false
                 end
             end
             if resultShown then
-                searchResults[currentArrayNumber] = profile
-                searchResults[currentArrayNumber]['player_name'] = i
-                searchResults[currentArrayNumber]['status'] = "Offline"
-                searchResults[currentArrayNumber]['zone'] = profile['zone'] and profile['zone'] or ""
-                
-                if TurtleRPQueryablePlayers[i] then
-                    if type(TurtleRPQueryablePlayers[i]) == "number" then
-                        if TurtleRPQueryablePlayers[i] > (currentTime - 65) then
-                            searchResults[currentArrayNumber]['status'] = "Online"
-                        end
-                    end
-                end
+                searchResults[currentArrayNumber] = {
+                    player_name = playerName,
+                    full_name = fullName,
+                    title = title,
+                    zone = zone,
+                    status = isOnline and "Online" or "Offline",
+                    profile = profile,
+                }
                 currentArrayNumber = currentArrayNumber + 1
             end
         end
     end
-    if TurtleRP.sortByKey ~= nil then
-      table.sort(searchResults, function(a, b) return sort_users_by_key(a, b, TurtleRP.sortByKey, TurtleRP.sortByOrder) end)
+    if TurtleRP.sortByKey ~= nil and table.getn(searchResults) > 1 then
+        table.sort(searchResults, function(a, b)
+            return sort_users_by_key(a, b, TurtleRP.sortByKey, TurtleRP.sortByOrder)
+        end)
     end
     TurtleRP.DirectorySearchResults = searchResults
-    TurtleRP_DirectoryFrame_Directory_Total:SetText(totalDirectoryChars .. " adventurers found (" .. totalDirectoryOnline .. " online)")
+    TurtleRP_DirectoryFrame_Directory_Total:SetText(
+        totalDirectoryChars .. " adventurers found (" .. totalDirectoryOnline .. " online)"
+    )
 end
 
 function TurtleRP.Directory_ScrollBar_Update()
@@ -198,7 +178,6 @@ end
 
 function TurtleRP.renderDirectory(directoryOffset)
   local searchResults = TurtleRP.DirectorySearchResults
-
   local currentFrameNumber = 1
   if directoryOffset == 0 then
     directoryOffset = directoryOffset + 1
@@ -209,11 +188,13 @@ function TurtleRP.renderDirectory(directoryOffset)
     if searchResults[i] then
       local thisCharacter = searchResults[i]
       getglobal(thisFrameName):Show()
-      getglobal(thisFrameName .. "Name"):SetText(thisCharacter['player_name'])
-      getglobal(thisFrameName .. 'Variable'):SetText(TurtleRP.secondColumn == "Character Name" and thisCharacter['full_name'] or thisCharacter['zone'])
+      getglobal(thisFrameName .. "Name"):SetText(thisCharacter.player_name)
+      getglobal(thisFrameName .. "Variable"):SetText(
+        TurtleRP.secondColumn == "Character Name" and thisCharacter.full_name or thisCharacter.zone
+      )
       getglobal(thisFrameName .. '_StatusOffline'):Show()
       getglobal(thisFrameName .. '_StatusOnline'):Hide()
-      if thisCharacter['status'] == "Online" then
+      if thisCharacter.status == "Online" then
         getglobal(thisFrameName .. '_StatusOffline'):Hide()
         getglobal(thisFrameName .. '_StatusOnline'):Show()
       end
