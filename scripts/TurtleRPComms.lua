@@ -274,7 +274,7 @@ function TurtleRP.buildDataStringToSend(dataPrefix)
 end
 
 local dataKeys = {
-    ["M"] = {"keyM", "icon", "full_name", "race", "class", "class_color", "ooc_info", "ic_info", "currently_ic", "ooc_pronouns", "ic_pronouns", "nsfw"},
+    ["M"] = {"keyM", "icon", "full_name", "race", "class", "class_color", "ooc_info", "ic_info", "currently_ic", "ooc_pronouns", "ic_pronouns", "nsfw", "title"},
     ["T"] = {"keyT", "atAGlance1", "atAGlance1Title", "atAGlance1Icon", "atAGlance2", "atAGlance2Title", "atAGlance2Icon", "atAGlance3", "atAGlance3Title", "atAGlance3Icon", "experience", "walkups", "injury", "romance", "death"},
     ["D"] = {"keyD", "description"}
 }
@@ -367,7 +367,11 @@ function TurtleRP.recievePingInformation(playerName, msg)
     charData['zone'] = zone
     charData['zoneX'] = strs[2]
     charData['zoneY'] = strs[3]
-    -- Only update player locations if the player is in the zone we're looking at
+    if strs[5] ~= nil and strs[5] ~= "" then
+        charData['currently_ic'] = strs[5]
+    elseif charData['currently_ic'] == nil then
+        charData['currently_ic'] = "1"
+    end
     if not WorldMapFrame:IsVisible() then
         return
     end
@@ -421,6 +425,8 @@ function TurtleRP.pingWithLocationAndVersion(message)
   SetMapToCurrentZone()
   local zoneX, zoneY = GetPlayerMapPosition("player")
   local zoneName = GetRealZoneText()
+  local icStatus = TurtleRPCharacterInfo["currently_ic"] or "1"
+
   if oldContinent and oldContinent > 0 then
     SetMapZoom(oldContinent, oldZone or 0)
   end
@@ -428,18 +434,18 @@ function TurtleRP.pingWithLocationAndVersion(message)
   message = message .. zoneName
   if TurtleRPSettings['share_location'] == "1" then
     if (zoneX == 0 and zoneY == 0) then
-        if zoneName == "Ironforge" or zoneName == "Stormwind City" or zoneName == "Darnassus" or zoneName == "Orgrimmar" or zoneName == "Thunder Bluff" or zoneName == "Undercity" then
-            message = message .. "~0.5~0.5~1.1.0"
-        else
-            message = message .. "~false~false~1.1.0"
-        end
+      if zoneName == "Ironforge" or zoneName == "Stormwind City" or zoneName == "Darnassus" or zoneName == "Orgrimmar" or zoneName == "Thunder Bluff" or zoneName == "Undercity" or zoneName == "Alah'thalas" then
+        message = message .. "~0.5~0.5~1.1.0~" .. icStatus
+      else
+        message = message .. "~false~false~1.1.0~" .. icStatus
+      end
     else
-      message = message .. "~" .. math.floor(zoneX * 10000)/10000 .. "~" .. math.floor(zoneY * 10000)/10000 .. "~1.1.0"
+      message = message .. "~" .. math.floor(zoneX * 10000)/10000 .. "~" .. math.floor(zoneY * 10000)/10000 .. "~1.1.0~" .. icStatus
     end
   else
-    message = message .. "~false~false~1.1.0"
+    message = message .. "~false~false~1.1.0~" .. icStatus
   end
-  
+
   TurtleRP.ttrpChatSend(message)
 end
 
