@@ -22,7 +22,10 @@ To archive from source code, use `git archive --output=TurtleRP-<v>.zip --prefix
 - Upon reaching Level 10, or logging in for the first time, a popup will appear prompting user to join the /rp chat channel.
 - Name 'usertag' in /rp (the bot we use in the Nordanaar RP discord!) no longer appears before message, only the discord handle.
 - Small bug fix regarding Alah'Thalas map tracking variable
+- Restructing of a lot of the Directory. Much smoother experience now, with auto updating when receiving new data.
+- Downloads ttrp profiles when someone sends a message in /rp. Gotta be in /rp, of course. If their name comes through as their IGN for the first message, next message should show the actual profile.
 - Dev badge added. Say hi if you see me.
+
 
 ---
 ### To Do
