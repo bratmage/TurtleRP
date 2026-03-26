@@ -157,7 +157,7 @@ function TurtleRP.SendLongFormMessage(type, message)
     local extraSpace = currentMessageString == "" and (emotePrefix .. "") or " "
     currentMessageString = currentMessageString .. extraSpace .. v
     if sendMessage then
-      local finalType = string.upper(type) -- Converts 'Say' to 'SAY', 'Party' to 'PARTY', etc.
+      local finalType = string.upper(type) 
 	  ChatThrottleLib:SendChatMessage("NORMAL", "TTRP", currentMessageString, finalType)
       currentMessageString = ""
       currentCharCount = 0
