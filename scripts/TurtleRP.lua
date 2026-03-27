@@ -9,7 +9,7 @@
 TurtleRP.TestMode = 0
 
 -- Dev
-TurtleRP.currentVersion = "1.3"
+TurtleRP.currentVersion = "1.3.1"
 TurtleRP.latestVersion = TurtleRP.currentVersion
 -- Chat
 TurtleRP.channelName = "TTRP"
@@ -590,7 +590,7 @@ function TurtleRP.IsDevProfile(playerName)
   if realmName ~= "nordanaar" then
     return false
   end
-  return loweredName == "prynn" or loweredName == "bratmage"
+  return loweredName == "prynn" or loweredName == "bratmage" or loweredName == "celryn" or loweredName == "niane"
 end
 function TurtleRP.GetDevBadgeText()
   return "|cff5bcefaT|cff70d4fbu|cff84dafbr|cff98e0fct|cffade6fcl|cffc2edfde|cffd6f3feR|cffeaf9feP|cffffffff |cffffffffD|cfffde8ede|cfffbd2e3v|cfff9bdd9e|cfff7a7cfl|cfff591c5o|cfff37bbbp|cfff165b1e|cfff04fa7r"
@@ -700,7 +700,27 @@ function TurtleRP.HookChatFrames()
         end
     end
 end
-
+--New chat message to show player_name variable when shift clicking due to the hook overriding it
+function TurtleRP.HookPlayerLinkClicks()
+    if TurtleRP.playerLinkHooked then
+        return
+    end
+    TurtleRP.playerLinkHooked = true
+    TurtleRP.originalSetItemRef = SetItemRef
+	   SetItemRef = function(link, text, button)
+		if IsShiftKeyDown() and link then
+			local _, _, linkType, playerName = string.find(link, "^(%a+):([^:]+)")
+			if linkType == "player" and playerName then
+				local message = "|cff999999Player:|r " .. playerName
+				if TurtleRP.IsDevProfile(playerName) then
+					message = message .. " [" .. TurtleRP.GetDevBadgeText() .. "|r]"
+				end
+				DEFAULT_CHAT_FRAME:AddMessage(message)
+			end
+		end
+    TurtleRP.originalSetItemRef(link, text, button)
+end
+end
 local f = CreateFrame("Frame")
 f:RegisterEvent("VARIABLES_LOADED")
 f:RegisterEvent("PLAYER_LEVEL_UP")
@@ -708,6 +728,7 @@ f:RegisterEvent("PLAYER_ENTERING_WORLD")
 f:SetScript("OnEvent", function()
     if event == "VARIABLES_LOADED" then
         TurtleRP.HookChatFrames() 
+		TurtleRP.HookPlayerLinkClicks()
         if TurtleRP.OnLoad then
             TurtleRP.OnLoad()
         end
