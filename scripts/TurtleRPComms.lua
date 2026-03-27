@@ -30,6 +30,10 @@ DR
 local lastRequestType = nil
 local lastPlayerName = nil
 local timeOfLastSend = time()
+local rpRequestQueue = {}
+local rpRequestLookup = {}
+local rpSeenSpeakers = {}
+TurtleRP.rpSeenSpeakers = rpSeenSpeakers
 
 local splitString
 
@@ -147,20 +151,11 @@ function TurtleRP.checkTTRPChannel()
     end
   end
 end
-local recentRPRequests = {}
-
-function TurtleRP.RequestDirectoryProfileFromRPChat(playerName)
-    if not playerName or playerName == UnitName("player") then
-        return
-    end
-    local now = time()
-    if recentRPRequests[playerName] and recentRPRequests[playerName] > (now - 30) then
-        return
-    end
-    recentRPRequests[playerName] = now
-    TurtleRP.ttrpChatSend("M:" .. playerName .. "~NO_KEY")
-end
 function TurtleRP.communication_events()
+    if not TurtleRP.rpQueueProcessorStarted then
+        TurtleRP.StartRPRequestQueueProcessor()
+        TurtleRP.rpQueueProcessorStarted = true
+    end
   TurtleRP_Target_DescriptionButton:SetScript("OnClick", function()
     TurtleRP.OpenProfile()
     if UnitName("target") == UnitName("player") then
@@ -171,17 +166,22 @@ function TurtleRP.communication_events()
   end)
   local CheckMessages = CreateFrame("Frame", "TurtleRPMessageScanner")
   CheckMessages:RegisterEvent("CHAT_MSG_CHANNEL")
-  CheckMessages:SetScript("OnEvent", function()
+ CheckMessages:SetScript("OnEvent", function()
     if event == "CHAT_MSG_CHANNEL" then
-      local channelName = string.lower(arg9 or "")
-      local sender = arg2
-      if channelName == string.lower(TurtleRP.channelName) then
-        TurtleRP.checkChatMessage(TurtleRP.DrunkDecode(arg1), sender)
-      elseif channelName == "rp" then
-        TurtleRP.RequestDirectoryProfileFromRPChat(sender)
-      end
+        local channelName = string.lower(arg9 or "")
+        local sender = arg2
+        if channelName == string.lower(TurtleRP.channelName) then
+            TurtleRP.checkChatMessage(TurtleRP.DrunkDecode(arg1), sender)
+        elseif channelName == "rp" then
+			local dash = string.find(sender or "", "-")
+			if dash then
+				sender = string.sub(sender, 1, dash - 1)
+			end
+			rpSeenSpeakers[sender] = true
+			TurtleRP.QueueRPProfileRequest(sender)
+		end
     end
-  end)
+end)
 
 end
 
@@ -336,10 +336,11 @@ function TurtleRP.recieveAndStoreData(dataPrefix, playerName, msg)
   if TurtleRPCharacters[playerName] == nil then
     TurtleRPCharacters[playerName] = {}
   end
-  if dataPrefix == "MR" then
+    if dataPrefix == "MR" then
     local readyToProcess = TurtleRP.storeChunkedData(dataPrefix, playerName, stringData)
     if readyToProcess then
       TurtleRP.processAndStoreData(dataPrefix, playerName)
+      TurtleRP.RefreshDirectoryIfVisible()
       TurtleRP.displayData(dataPrefix, playerName)
       if playerName == UnitName("target") or playerName == UnitName("mouseover") then
         TurtleRP.SetTargetNameFrameWidths(playerName)
@@ -360,7 +361,6 @@ function TurtleRP.recieveAndStoreData(dataPrefix, playerName, msg)
       TurtleRP.displayData(dataPrefix, playerName)
     end
   end
-  TurtleRP.RefreshDirectoryIfVisible()
 end
 
 local pingSplitTable = {}
@@ -391,7 +391,6 @@ function TurtleRP.recievePingInformation(playerName, msg)
     if zone == TurtleRP.GetZones(GetCurrentMapContinent())[GetCurrentMapZone()] then
         TurtleRP.show_player_locations()
     end
-	TurtleRP.RefreshDirectoryIfVisible()
 end
 
 function TurtleRP.displayData(dataPrefix, playerName)
@@ -478,14 +477,67 @@ function TurtleRP.DrunkDecode(text)
 	text = strGsub(text, DrunkSuffix, "") -- likely only needed if decoding an entire message
 	return text
 end
-
+	--11 second delay on refreshing the directory.
 function TurtleRP.RefreshDirectoryIfVisible()
-    if TurtleRP_DirectoryFrame and TurtleRP_DirectoryFrame:IsVisible() then
-        TurtleRP.updateDirectorySearch()
-        TurtleRP.Directory_ScrollBar_Update()
+    if not (TurtleRP_DirectoryFrame and TurtleRP_DirectoryFrame:IsVisible()) then
+        return
     end
+    local now = GetTime()
+    if not TurtleRP.lastDirectoryRefreshTime then
+        TurtleRP.lastDirectoryRefreshTime = 0
+    end
+    if now - TurtleRP.lastDirectoryRefreshTime < 11 then
+        return
+    end
+    TurtleRP.lastDirectoryRefreshTime = now
+    TurtleRP.updateDirectorySearch()
+    TurtleRP.Directory_ScrollBar_Update()
 end
+	-- Downloading profiles off of /rp was giving some serious chat throttle issues. Queueing the downloads now.
+function TurtleRP.QueueRPProfileRequest(playerName)
+    if not playerName or playerName == UnitName("player") then
+        return
+    end
+    if TurtleRPCharacters[playerName] ~= nil then
+        return
+    end
+    if rpRequestLookup[playerName] then
+        return
+    end
+    rpRequestLookup[playerName] = true
+    table.insert(rpRequestQueue, playerName)
+end
+function TurtleRP.StartRPRequestQueueProcessor()
+    local frame = CreateFrame("Frame", "TurtleRPQueueProcessor")
+    local nextRun = GetTime() + 30
+    frame:SetScript("OnUpdate", function()
+        if GetTime() >= nextRun then
+            nextRun = GetTime() + 30
+            if table.getn(rpRequestQueue) > 0 then
+                local playerName = table.remove(rpRequestQueue, 1)
+                rpRequestLookup[playerName] = nil
 
+                TurtleRP.ttrpChatSend("M:" .. playerName .. "~NO_KEY")
+            end
+        end
+    end)
+end
+function TurtleRP.QueueDirectorySearchRequest(playerName)
+    if not playerName or playerName == "" then
+        return
+    end
+    if playerName == UnitName("player") then
+        return
+    end
+    if TurtleRPCharacters[playerName] ~= nil then
+        return
+    end
+    if rpRequestLookup[playerName] then
+        return
+    end
+    rpRequestLookup[playerName] = true
+    table.insert(rpRequestQueue, playerName)
+end
 function TurtleRP.ttrpChatSend(message)
   ChatThrottleLib:SendChatMessage("NORMAL", TurtleRP.channelName, TurtleRP.DrunkEncode(message), "CHANNEL", nil, GetChannelName(TurtleRP.channelName))
 end
