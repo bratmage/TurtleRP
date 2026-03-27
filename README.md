@@ -36,20 +36,28 @@ Tests
 
 Bugs
 
-- All of the profile downloading in /rp is causing a lot of chat throttle notifications.
-- Shift Clicking displays "full_name" instead of "player_name"
-- If you have Profile open, and a description comes back in the chat, it'll obscure the profile
+- Not disabled in BGs. Why have this setting if it doesn't work?
+- Profile Switching causing issues. Needs more investigation, please submit any here on github or to @takoy on discord.
+- Some icons require you to search, rather than appear on the scroll list.
 
 Minor Bugs
 
 - Color pick is sometimes connected to other color picker instances
-- Not disabled in BGs
+- If you have Profile open, and a description comes back in the chat, it'll obscure the profile
 - Custom colors for emotes get overwritten
 - Slight adjustment in PvP text padding/spacing when icon added while PvP enabled
 
 ---
 
 ### Recently Done
+
+1.3.1
+- Added player name section when shift-clicking a name in chat.
+- Debounced search in directory. Updates 1.5 seconds after typing. Much smoother than enter but enter does still work.
+- Directory now only refreshes when receiving new data, and only searches for new data every 11 seconds. Should be less laggy but please submit your feedback!
+- Fixed bug of directory not searching for player_name and only searching in profiles already downloaded.
+- Messages in /rp automatically add the player_name to the local database for the directory, even if they are in the download queue, just to allow for instant searching in the directory.
+- Queue system for downloading profiles from /rp. Prevents a small bit of chat throttle, but still an issue. Oh well.
 
 1.2.2
 - Extended Chatbox that allows messages past the 255 character limit now supports PARTY /p and RAID /r
