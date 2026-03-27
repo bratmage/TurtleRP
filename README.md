@@ -47,6 +47,12 @@ Minor Bugs
 - Custom colors for emotes get overwritten
 - Slight adjustment in PvP text padding/spacing when icon added while PvP enabled
 
+To Do
+
+- More icons!
+- Revamp of the multiple profiles system, including a profile tab and integration of Incognito
+- Changes to the directory search to display results numbers rather than total numbers. Maybe add a counter of TRPs in a zone on the map. If you like XML please hmu 
+
 ---
 
 ### Recently Done
