@@ -112,21 +112,26 @@ function TurtleRP.updateDirectorySearch()
                 totalDirectoryOnline = totalDirectoryOnline + 1
                 isOnline = true
             end
-            local fullName = profile["full_name"] or ""
-            local title = profile["title"] or ""
-            local zone = profile["zone"] or ""
-            local resultShown = true
-            if lowerSearch ~= "" then
-                local fullNameLower = string.lower(fullName)
-                local titleLower = string.lower(title)
-                local zoneLower = string.lower(zone)
-                local nameMatch = string.find(fullNameLower, lowerSearch, 1, true)
-                local titleMatch = string.find(titleLower, lowerSearch, 1, true)
-                local zoneMatch = string.find(zoneLower, lowerSearch, 1, true)
-                if not (nameMatch or titleMatch or zoneMatch) then
-                    resultShown = false
-                end
-            end
+				local fullName = profile["full_name"] or ""
+				local title = profile["title"] or ""
+				local zone = profile["zone"] or ""
+				local playerNameLower = string.lower(playerName or "")
+
+				local resultShown = true
+				if lowerSearch ~= "" then
+					local fullNameLower = string.lower(fullName)
+					local titleLower = string.lower(title)
+					local zoneLower = string.lower(zone)
+
+					local playerMatch = string.find(playerNameLower, lowerSearch, 1, true)
+					local nameMatch = string.find(fullNameLower, lowerSearch, 1, true)
+					local titleMatch = string.find(titleLower, lowerSearch, 1, true)
+					local zoneMatch = string.find(zoneLower, lowerSearch, 1, true)
+
+					if not (playerMatch or nameMatch or titleMatch or zoneMatch) then
+						resultShown = false
+					end
+				end
             if resultShown then
                 searchResults[currentArrayNumber] = {
                     player_name = playerName,
@@ -150,7 +155,23 @@ function TurtleRP.updateDirectorySearch()
         totalDirectoryChars .. " adventurers found (" .. totalDirectoryOnline .. " online)"
     )
 end
-
+function TurtleRP.TrySearchUnknownPlayer()
+    local search = string.lower(TurtleRP.searchTerm or "")
+    if search == "" then
+        return
+    end
+    local queued = 0
+    for playerName, _ in pairs(TurtleRP.rpSeenSpeakers or {}) do
+        local playerNameLower = string.lower(playerName or "")
+        if string.find(playerNameLower, search, 1, true) then
+            TurtleRP.QueueDirectorySearchRequest(playerName)
+            queued = queued + 1
+        end
+        if queued >= 5 then
+            break
+        end
+    end
+end
 function TurtleRP.Directory_ScrollBar_Update()
   FauxScrollFrame_Update(TurtleRP_DirectoryFrame_Directory_ScrollFrame, table.getn(TurtleRP.DirectorySearchResults), 17, 16)
   local currentLine = FauxScrollFrame_GetOffset(TurtleRP_DirectoryFrame_Directory_ScrollFrame)
