@@ -774,12 +774,28 @@
               <OnShow>
                 this:ClearFocus();
               </OnShow>
-              <OnEnterPressed>
-                TurtleRP.searchTerm = this:GetText()
-                TurtleRP.updateDirectorySearch()
-                TurtleRP_DirectoryFrame_Directory_ScrollFrameScrollBar:SetValue(0)
-                TurtleRP.Directory_ScrollBar_Update()
-              </OnEnterPressed>
+				<OnTextChanged>
+					this.lastChangeTime = GetTime()
+				</OnTextChanged>
+				<OnUpdate>
+					if this.lastChangeTime and (GetTime() - this.lastChangeTime > 1.5) then
+						this.lastChangeTime = nil
+
+						TurtleRP.searchTerm = this:GetText()
+						TurtleRP.updateDirectorySearch()
+						TurtleRP.TrySearchUnknownPlayer()
+						TurtleRP_DirectoryFrame_Directory_ScrollFrameScrollBar:SetValue(0)
+						TurtleRP.Directory_ScrollBar_Update()
+					end
+				</OnUpdate>
+				<OnEnterPressed>
+					this.lastChangeTime = nil
+					TurtleRP.searchTerm = this:GetText()
+					TurtleRP.updateDirectorySearch()
+					TurtleRP.TrySearchUnknownPlayer()
+					TurtleRP_DirectoryFrame_Directory_ScrollFrameScrollBar:SetValue(0)
+					TurtleRP.Directory_ScrollBar_Update()
+				</OnEnterPressed>
               <OnEscapePressed>
                 this:ClearFocus();
               </OnEscapePressed>
