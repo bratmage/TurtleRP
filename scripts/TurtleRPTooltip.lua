@@ -130,6 +130,7 @@ function TurtleRP.buildTooltip(playerName, targetType)
   local ic_pronouns     = locallyRetrievable and characterInfo['ic_pronouns'] or nil
   local ooc_info        = locallyRetrievable and characterInfo['ooc_info'] or nil
   local ooc_pronouns    = locallyRetrievable and characterInfo['ooc_pronouns'] or nil
+  local short_note      = locallyRetrievable and characterInfo['short_note'] or nil
   if targetType ~= nil then
     guildName, guildRank= GetGuildInfo(targetType)
     queriedLevel = UnitLevel(targetType)
@@ -159,6 +160,7 @@ function TurtleRP.buildTooltip(playerName, targetType)
   local raceAndClassText    = whiteColor .. race .. " " .. thisClassColor .. class
   local ICandPronounsText   = "IC Info" .. TurtleRP.getPronounsText(ic_pronouns, pronounColor)
   local OOCandPronounsText  = "OOC Info" .. TurtleRP.getPronounsText(ooc_pronouns, pronounColor)
+  local ShortNoteText       = "Personal Note"
 
   -- Modify tooltip
   if nsfw == "1" and TurtleRPSettings["show_nsfw"] == "0" then
@@ -211,22 +213,29 @@ function TurtleRP.buildTooltip(playerName, targetType)
     getglobal("GameTooltipTextRight"..l):Show()
     getglobal("GameTooltipTextRight"..l):SetText(levelAndStatusText)
   end
-    if TurtleRP.IsDevProfile(playerName) then
-    l = l + 1
-    if getglobal("GameTooltipTextLeft"..l):GetText() == nil then
-      TurtleRP.gameTooltip:AddLine(TurtleRP.GetDevBadgeText(), 1, 1, 1)
-    else
-      getglobal("GameTooltipTextLeft"..l):SetText(TurtleRP.GetDevBadgeText())
-      getglobal("GameTooltipTextRight"..l):SetText("")
-      getglobal("GameTooltipTextRight"..l):Hide()
-    end
-  end
+		if TurtleRP.IsDevProfile(playerName) then
+		  l = l + 1
+		  if getglobal("GameTooltipTextLeft"..l):GetText() == nil then
+			TurtleRP.gameTooltip:AddLine(" ")
+		  else
+			getglobal("GameTooltipTextLeft"..l):SetText(" ")
+		  end
+		  l = l + 1
+		  if getglobal("GameTooltipTextLeft"..l):GetText() == nil then
+			TurtleRP.gameTooltip:AddDoubleLine("", TurtleRP.GetDevBadgeText(), 1, 1, 1, 1, 1, 1)
+		  else
+			getglobal("GameTooltipTextLeft"..l):SetText("")
+			getglobal("GameTooltipTextRight"..l):Show()
+			getglobal("GameTooltipTextRight"..l):SetText(TurtleRP.GetDevBadgeText())
+		  end
+		end
 
   -- Stuff only available for TTRP folks
   if locallyRetrievable then
 
     l = TurtleRP.printICandOOC(ic_info, ICandPronounsText, blankLine, l)
     l = TurtleRP.printICandOOC(ooc_info, OOCandPronounsText, blankLine, l)
+	l = TurtleRP.printICandOOC(short_note, ShortNoteText, blankLine, l)
 
     if icon ~= nil and icon ~= "" then
       TurtleRP_Tooltip_Icon:SetPoint("TOPLEFT", GameTooltipTextLeft1, "TOPLEFT")
