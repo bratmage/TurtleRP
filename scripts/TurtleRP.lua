@@ -9,7 +9,7 @@
 TurtleRP.TestMode = 0
 
 -- Dev
-TurtleRP.currentVersion = "1.3.1"
+TurtleRP.currentVersion = "unknown"
 TurtleRP.latestVersion = TurtleRP.currentVersion
 -- Chat
 TurtleRP.channelName = "TTRP"
@@ -40,10 +40,16 @@ TurtleRP.currentlyViewedPlayer = nil
 TurtleRP.currentlyViewedPlayerFrame = nil
 TurtleRP.locationFrames = {}
 TurtleRP.showDescription = nil
+TurtleRP.currentProfileTab = "general"
 TurtleRP.secondColumn = "Character Name"
 TurtleRP.sortByKey = "status"
 TurtleRP.sortByOrder = 1
 TurtleRP.searchTerm = ""
+TurtleRP.adminSuppressClosePrompt = nil
+TurtleRP.adminUnsavedPopupPending = nil
+TurtleRP.adminStateSnapshot = nil
+TurtleRP.previewCharacterInfo = nil
+TurtleRP.previewSource = nil
 -- Accounting for PFUI, Go Shagu Go
 if pfUI ~= nil and pfUI.uf ~= nil and pfUI.uf.target ~= nil then
   TurtleRP.targetFrame = pfUI.uf.target
@@ -58,7 +64,15 @@ TurtleRP_Parent:RegisterEvent("ADDON_LOADED")
 TurtleRP_Parent:RegisterEvent("PLAYER_LOGOUT")
 
 function TurtleRP:OnEvent()
-  if event == "ADDON_LOADED" and arg1 == "TurtleRP" then
+	if event == "ADDON_LOADED" and arg1 == "TurtleRP" then
+
+  local tocVersion = GetAddOnMetadata("TurtleRP", "Version")
+  if tocVersion and tocVersion ~= "" then
+    TurtleRP.currentVersion = tocVersion
+  else
+    TurtleRP.currentVersion = "unknown"
+  end
+  TurtleRP.latestVersion = TurtleRP.currentVersion
 
     -- Reset for testing
     -- TurtleRPCharacterInfo = nil
@@ -81,6 +95,7 @@ function TurtleRP:OnEvent()
     TurtleRPCharacterInfoTemplate["currently_ic"] = "1"
 
     TurtleRPCharacterInfoTemplate["notes"] = ""
+	TurtleRPCharacterInfoTemplate["short_note"] = ""
 
     TurtleRPCharacterInfoTemplate["keyT"] = TurtleRP.randomchars()
     TurtleRPCharacterInfoTemplate["atAGlance1"] = ""
@@ -112,6 +127,7 @@ function TurtleRP:OnEvent()
     TurtleRPSettingsTemplate["share_location"] = "0"
     TurtleRPSettingsTemplate["show_nsfw"] = "0"
 	TurtleRPSettingsTemplate["chat_names"] = "1"
+	TurtleRPSettingsTemplate["auto_emote_name"] = "1"
     TurtleRPSettingsTemplate["selected_profile"] = "0"
 
 
@@ -191,10 +207,22 @@ function TurtleRP:OnEvent()
     TurtleRP.display_nearby_players()
 
     TurtleRP.emote_events()
-
-    -- Set Version number
     TurtleRP_AdminSB_Content6_VersionText:SetText(TurtleRP.currentVersion)
-
+	
+    StaticPopupDialogs["TTRP_ADMIN_UNSAVED"] = {
+      text = "You have unsaved changes. Continue editing, or discard them?",
+      button1 = "Continue Editing",
+      button2 = "Discard Changes",
+      OnAccept = function()
+      end,
+      OnCancel = function()
+        TurtleRP.ForceCloseAdmin()
+      end,
+      timeout = 0,
+      whileDead = 1,
+      hideOnEscape = 1,
+      preferredIndex = 3,
+    };
     -- SLash commands
     SLASH_TURTLERP1 = "/ttrp";
     function SlashCmdList.TURTLERP(msg)
@@ -300,6 +328,7 @@ function TurtleRP.populate_interface_user_data()
   local replacedLineBreaks = gsub(TurtleRPCharacterInfo["description"], "@N", "%\n")
   TurtleRP_AdminSB_Content3_DescriptionScrollBox_DescriptionInput:SetText(replacedLineBreaks)
   TurtleRP_AdminSB_Content4_NotesScrollBox_NotesInput:SetText(TurtleRPCharacterInfo["notes"])
+  TurtleRP_AdminSB_Content4_ShortNoteBox_Input:SetText(TurtleRPCharacterInfo["short_note"] or "")
 
   TurtleRP_AdminSB_Content5_PVPButton:SetChecked(TurtleRPSettings["bgs"] == "on" and true or false)
   TurtleRP_AdminSB_Content5_NameButton:SetChecked(TurtleRPSettings["name_size"] == "1" and true or false)
@@ -346,32 +375,54 @@ function TurtleRP.populate_interface_user_data()
 end
 
 function TurtleRP.setCharacterIcon()
-  if TurtleRPCharacterInfo["icon"] ~= "" then
-    local iconIndex = TurtleRPCharacterInfo["icon"]
-    TurtleRP_AdminSB_Content1_IconButton:SetBackdrop({ bgFile = "Interface\\Icons\\" .. TurtleRPIcons[tonumber(iconIndex)] })
+  local pendingIcons = TurtleRP_IconSelector and TurtleRP_IconSelector.selectedIconIndex
+  local iconIndex = pendingIcons and pendingIcons["icon"] or TurtleRPCharacterInfo["icon"]
+
+  if iconIndex ~= "" and iconIndex ~= nil then
+    TurtleRP_AdminSB_Content1_IconButton:SetBackdrop({
+      bgFile = "Interface\\Icons\\" .. TurtleRPIcons[tonumber(iconIndex)]
+    })
   else
-    TurtleRP_AdminSB_Content1_IconButton:SetBackdrop({ bgFile = "Interface\\Buttons\\UI-EmptySlot-White" })
+    TurtleRP_AdminSB_Content1_IconButton:SetBackdrop({
+      bgFile = "Interface\\Buttons\\UI-EmptySlot-White"
+    })
   end
 end
 
 function TurtleRP.setAtAGlanceIcons()
-  if TurtleRPCharacters[UnitName("player")]["atAGlance1Icon"] ~= "" then
-    local iconIndex = TurtleRPCharacters[UnitName("player")]["atAGlance1Icon"]
-    TurtleRP_AdminSB_Content2_AAG1IconButton:SetBackdrop({ bgFile = "Interface\\Icons\\" .. TurtleRPIcons[tonumber(iconIndex)] })
+  local pendingIcons = TurtleRP_IconSelector and TurtleRP_IconSelector.selectedIconIndex or {}
+  local characterInfo = TurtleRPCharacters[UnitName("player")]
+
+  local icon1 = pendingIcons["atAGlance1Icon"] or characterInfo["atAGlance1Icon"]
+  local icon2 = pendingIcons["atAGlance2Icon"] or characterInfo["atAGlance2Icon"]
+  local icon3 = pendingIcons["atAGlance3Icon"] or characterInfo["atAGlance3Icon"]
+
+  if icon1 ~= "" and icon1 ~= nil then
+    TurtleRP_AdminSB_Content2_AAG1IconButton:SetBackdrop({
+      bgFile = "Interface\\Icons\\" .. TurtleRPIcons[tonumber(icon1)]
+    })
   else
-    TurtleRP_AdminSB_Content2_AAG1IconButton:SetBackdrop({ bgFile = "Interface\\Buttons\\UI-EmptySlot-White" })
+    TurtleRP_AdminSB_Content2_AAG1IconButton:SetBackdrop({
+      bgFile = "Interface\\Buttons\\UI-EmptySlot-White"
+    })
   end
-  if TurtleRPCharacters[UnitName("player")]["atAGlance2Icon"] ~= "" then
-    local iconIndex = TurtleRPCharacters[UnitName("player")]["atAGlance2Icon"]
-    TurtleRP_AdminSB_Content2_AAG2IconButton:SetBackdrop({ bgFile = "Interface\\Icons\\" .. TurtleRPIcons[tonumber(iconIndex)] })
+  if icon2 ~= "" and icon2 ~= nil then
+    TurtleRP_AdminSB_Content2_AAG2IconButton:SetBackdrop({
+      bgFile = "Interface\\Icons\\" .. TurtleRPIcons[tonumber(icon2)]
+    })
   else
-    TurtleRP_AdminSB_Content2_AAG2IconButton:SetBackdrop({ bgFile = "Interface\\Buttons\\UI-EmptySlot-White" })
+    TurtleRP_AdminSB_Content2_AAG2IconButton:SetBackdrop({
+      bgFile = "Interface\\Buttons\\UI-EmptySlot-White"
+    })
   end
-  if TurtleRPCharacters[UnitName("player")]["atAGlance3Icon"] ~= "" then
-    local iconIndex = TurtleRPCharacters[UnitName("player")]["atAGlance3Icon"]
-    TurtleRP_AdminSB_Content2_AAG3IconButton:SetBackdrop({ bgFile = "Interface\\Icons\\" .. TurtleRPIcons[tonumber(iconIndex)] })
+  if icon3 ~= "" and icon3 ~= nil then
+    TurtleRP_AdminSB_Content2_AAG3IconButton:SetBackdrop({
+      bgFile = "Interface\\Icons\\" .. TurtleRPIcons[tonumber(icon3)]
+    })
   else
-    TurtleRP_AdminSB_Content2_AAG3IconButton:SetBackdrop({ bgFile = "Interface\\Buttons\\UI-EmptySlot-White" })
+    TurtleRP_AdminSB_Content2_AAG3IconButton:SetBackdrop({
+      bgFile = "Interface\\Buttons\\UI-EmptySlot-White"
+    })
   end
 end
 
@@ -384,6 +435,235 @@ function TurtleRP.SetProfileDropdown()
       UIDropDownMenu_SetSelectedValue(v, thisValue)
     end
   end
+-- Profile preview
+  function TurtleRP.CopyTableShallow(source)
+  local copy = {}
+  if not source then
+    return copy
+  end
+
+  for k, v in pairs(source) do
+    if type(v) == "table" then
+      local childCopy = {}
+      for childK, childV in pairs(v) do
+        childCopy[childK] = childV
+      end
+      copy[k] = childCopy
+    else
+      copy[k] = v
+    end
+  end
+
+  return copy
+end
+
+function TurtleRP.BuildAdminProfilePreviewData()
+  local preview = TurtleRP.CopyTableShallow(TurtleRPCharacterInfo)
+
+  preview["full_name"] = TurtleRP.validateBeforeSaving(TurtleRP_AdminSB_Content1_NameInput:GetText()) or ""
+  preview["race"] = TurtleRP.validateBeforeSaving(TurtleRP_AdminSB_Content1_RaceInput:GetText()) or ""
+  preview["class"] = TurtleRP.validateBeforeSaving(TurtleRP_AdminSB_Content1_ClassInput:GetText()) or ""
+  preview["title"] = TurtleRP.validateBeforeSaving(TurtleRP_AdminSB_Content1_TitleInput:GetText()) or ""
+  preview["ic_info"] = TurtleRP.validateBeforeSaving(TurtleRP_AdminSB_Content1_ICScrollBox_ICInfoInput:GetText()) or ""
+  preview["ooc_info"] = TurtleRP.validateBeforeSaving(TurtleRP_AdminSB_Content1_OOCScrollBox_OOCInfoInput:GetText()) or ""
+  preview["ic_pronouns"] = TurtleRP.validateBeforeSaving(TurtleRP_AdminSB_Content1_ICPronounsInput:GetText()) or ""
+  preview["ooc_pronouns"] = TurtleRP.validateBeforeSaving(TurtleRP_AdminSB_Content1_OOCPronounsInput:GetText()) or ""
+  preview["keyM"] = preview["keyM"] or TurtleRP.randomchars()
+
+  return preview
+end
+
+function TurtleRP.BuildAdminDescriptionPreviewData()
+  local preview = TurtleRP.CopyTableShallow(TurtleRPCharacterInfo)
+
+  preview["description"] = TurtleRP.validateBeforeSaving(
+    TurtleRP_AdminSB_Content3_DescriptionScrollBox_DescriptionInput:GetText()
+  ) or ""
+  preview["keyD"] = preview["keyD"] or TurtleRP.randomchars()
+
+  return preview
+end
+
+function TurtleRP.OpenAdminProfilePreview()
+  TurtleRP.previewCharacterInfo = TurtleRP.BuildAdminProfilePreviewData()
+  TurtleRP.previewSource = "admin_profile"
+  TurtleRP.currentlyViewedPlayer = UnitName("player")
+  TurtleRP.OpenProfilePreview("general")
+end
+
+function TurtleRP.OpenAdminDescriptionPreview()
+  TurtleRP.previewCharacterInfo = TurtleRP.BuildAdminDescriptionPreviewData()
+  TurtleRP.previewSource = "admin_description"
+  TurtleRP.currentlyViewedPlayer = UnitName("player")
+  TurtleRP.OpenProfilePreview("description")
+end
+
+function TurtleRP.GetAdminPendingIconValue(key, fallback)
+  local pendingIcons = TurtleRP_IconSelector and TurtleRP_IconSelector.selectedIconIndex or nil
+  if pendingIcons and pendingIcons[key] ~= nil then
+    return pendingIcons[key]
+  end
+  return fallback
+end
+
+function TurtleRP.GetAdminClassColorHex()
+  local r, g, b = TurtleRP_AdminSB_Content1_ClassColorButton:GetBackdropColor()
+  return TurtleRP.rgb2hex(r, g, b)
+end
+
+function TurtleRP.ClearAdminFocus()
+  if not TurtleRP_AdminSB then
+    return
+  end
+
+  TurtleRP_AdminSB_Content1_NameInput:ClearFocus()
+  TurtleRP_AdminSB_Content1_RaceInput:ClearFocus()
+  TurtleRP_AdminSB_Content1_ClassInput:ClearFocus()
+  TurtleRP_AdminSB_Content1_TitleInput:ClearFocus()
+  TurtleRP_AdminSB_Content1_ICScrollBox_ICInfoInput:ClearFocus()
+  TurtleRP_AdminSB_Content1_OOCScrollBox_OOCInfoInput:ClearFocus()
+  TurtleRP_AdminSB_Content1_ICPronounsInput:ClearFocus()
+  TurtleRP_AdminSB_Content1_OOCPronounsInput:ClearFocus()
+
+  TurtleRP_AdminSB_Content2_AAG1TitleInput:ClearFocus()
+  TurtleRP_AdminSB_Content2_AAG2TitleInput:ClearFocus()
+  TurtleRP_AdminSB_Content2_AAG3TitleInput:ClearFocus()
+  TurtleRP_AdminSB_Content2_AtAGlance1ScrollBox_AAG1Input:ClearFocus()
+  TurtleRP_AdminSB_Content2_AtAGlance2ScrollBox_AAG2Input:ClearFocus()
+  TurtleRP_AdminSB_Content2_AtAGlance3ScrollBox_AAG3Input:ClearFocus()
+
+  TurtleRP_AdminSB_Content3_DescriptionScrollBox_DescriptionInput:ClearFocus()
+
+  TurtleRP_AdminSB_Content4_ShortNoteBox_Input:ClearFocus()
+  TurtleRP_AdminSB_Content4_NotesScrollBox_NotesInput:ClearFocus()
+end
+function TurtleRP.CaptureAdminStateSnapshot()
+  if not TurtleRP_AdminSB then
+    return ""
+  end
+
+  local characterInfo = TurtleRPCharacterInfo or {}
+  local playerInfo = TurtleRPCharacters[UnitName("player")] or characterInfo
+
+  local experience = UIDropDownMenu_GetSelectedValue(TurtleRP_AdminSB_Content1_Tab2_ExperienceDropdown)
+  local walkups = UIDropDownMenu_GetSelectedValue(TurtleRP_AdminSB_Content1_Tab2_WalkupsDropdown)
+  local injury = UIDropDownMenu_GetSelectedValue(TurtleRP_AdminSB_Content1_Tab2_InjuryDropdown)
+  local romance = UIDropDownMenu_GetSelectedValue(TurtleRP_AdminSB_Content1_Tab2_RomanceDropdown)
+  local death = UIDropDownMenu_GetSelectedValue(TurtleRP_AdminSB_Content1_Tab2_DeathDropdown)
+
+  local currentExperience = experience ~= nil and tostring(experience) or (characterInfo["experience"] or "0")
+  local currentWalkups = walkups ~= nil and tostring(walkups) or (characterInfo["walkups"] or "0")
+  local currentInjury = injury ~= nil and tostring(injury) or (characterInfo["injury"] or "0")
+  local currentRomance = romance ~= nil and tostring(romance) or (characterInfo["romance"] or "0")
+  local currentDeath = death ~= nil and tostring(death) or (characterInfo["death"] or "0")
+
+  local parts = {
+    TurtleRP_AdminSB_Content1_NameInput:GetText() or "",
+    TurtleRP_AdminSB_Content1_RaceInput:GetText() or "",
+    TurtleRP_AdminSB_Content1_ClassInput:GetText() or "",
+    TurtleRP_AdminSB_Content1_TitleInput:GetText() or "",
+    TurtleRP_AdminSB_Content1_ICScrollBox_ICInfoInput:GetText() or "",
+    TurtleRP_AdminSB_Content1_OOCScrollBox_OOCInfoInput:GetText() or "",
+    TurtleRP_AdminSB_Content1_ICPronounsInput:GetText() or "",
+    TurtleRP_AdminSB_Content1_OOCPronounsInput:GetText() or "",
+    TurtleRP_AdminSB_Content1_NSFWButton:GetChecked() and "1" or "0",
+    TurtleRP.GetAdminClassColorHex(),
+    TurtleRP.GetAdminPendingIconValue("icon", characterInfo["icon"] or ""),
+    currentExperience,
+    currentWalkups,
+    currentInjury,
+    currentRomance,
+    currentDeath,
+    TurtleRP_AdminSB_Content2_AtAGlance1ScrollBox_AAG1Input:GetText() or "",
+    TurtleRP_AdminSB_Content2_AAG1TitleInput:GetText() or "",
+    TurtleRP.GetAdminPendingIconValue("atAGlance1Icon", characterInfo["atAGlance1Icon"] or ""),
+    TurtleRP_AdminSB_Content2_AtAGlance2ScrollBox_AAG2Input:GetText() or "",
+    TurtleRP_AdminSB_Content2_AAG2TitleInput:GetText() or "",
+    TurtleRP.GetAdminPendingIconValue("atAGlance2Icon", characterInfo["atAGlance2Icon"] or ""),
+    TurtleRP_AdminSB_Content2_AtAGlance3ScrollBox_AAG3Input:GetText() or "",
+    TurtleRP_AdminSB_Content2_AAG3TitleInput:GetText() or "",
+    TurtleRP.GetAdminPendingIconValue("atAGlance3Icon", characterInfo["atAGlance3Icon"] or ""),
+    TurtleRP_AdminSB_Content3_DescriptionScrollBox_DescriptionInput:GetText() or "",
+    TurtleRP_AdminSB_Content4_NotesScrollBox_NotesInput:GetText() or "",
+    TurtleRP_AdminSB_Content4_ShortNoteBox_Input:GetText() or "",
+    playerInfo["notes"] or "",
+    playerInfo["short_note"] or "",
+  }
+
+  return table.concat(parts, "§")
+end
+
+function TurtleRP.RefreshAdminStateSnapshot()
+  TurtleRP.ClearAdminFocus()
+  TurtleRP.adminStateSnapshot = TurtleRP.CaptureAdminStateSnapshot()
+end
+function TurtleRP.HasUnsavedAdminChanges()
+  if not TurtleRP_AdminSB then
+    return false
+  end
+
+  if TurtleRP.adminStateSnapshot == nil then
+    return false
+  end
+
+  return TurtleRP.CaptureAdminStateSnapshot() ~= TurtleRP.adminStateSnapshot
+end
+
+function TurtleRP.ForceCloseAdmin()
+  TurtleRP.adminSuppressClosePrompt = true
+  TurtleRP.adminUnsavedPopupPending = nil
+  StaticPopup_Hide("TTRP_ADMIN_UNSAVED")
+
+  TurtleRP.previewCharacterInfo = nil
+  TurtleRP.previewSource = nil
+  TurtleRP_IconSelector.selectedIconIndex = {}
+  TurtleRP.adminStateSnapshot = nil
+
+  HideUIPanel(TurtleRP_AdminSB)
+  TurtleRP.populate_interface_user_data()
+
+  TurtleRP.adminSuppressClosePrompt = nil
+end
+
+function TurtleRP.RequestCloseAdmin()
+  TurtleRP.ClearAdminFocus()
+  if TurtleRP.HasUnsavedAdminChanges() then
+    StaticPopup_Show("TTRP_ADMIN_UNSAVED")
+  else
+    TurtleRP.ForceCloseAdmin()
+  end
+end
+
+function TurtleRP.ShowAdminUnsavedPopupDelayed()
+  if TurtleRP.adminUnsavedPopupPending then
+    return
+  end
+
+  TurtleRP.adminUnsavedPopupPending = true
+
+  local popupDelayFrame = CreateFrame("Frame")
+  popupDelayFrame:SetScript("OnUpdate", function()
+    popupDelayFrame:SetScript("OnUpdate", nil)
+    TurtleRP.adminUnsavedPopupPending = nil
+
+    if TurtleRP_AdminSB and TurtleRP_AdminSB:IsShown() then
+      StaticPopup_Show("TTRP_ADMIN_UNSAVED")
+    end
+  end)
+end
+
+function TurtleRP.HandleAdminHidden()
+  if TurtleRP.adminSuppressClosePrompt then
+    return
+  end
+  TurtleRP.ClearAdminFocus()
+  if not TurtleRP.HasUnsavedAdminChanges() then
+    return
+  end
+
+  ShowUIPanel(TurtleRP_AdminSB)
+  TurtleRP.ShowAdminUnsavedPopupDelayed()
+end
 -----
 -- Saving
 -----
@@ -398,19 +678,16 @@ function TurtleRP.change_character_profile()
   -- Swap Profiles
   TurtleRPCharacterInfo = TurtleRPPlayerProfiles[selected_profile]
   TurtleRPCharacters[UnitName("player")] = TurtleRPCharacterInfo
-  TurtleRP.populate_interface_user_data()
+  TurtleRP.setCharacterIcon()
+  TurtleRP.RefreshAdminStateSnapshot()
 end
 
 function TurtleRP.change_nsfw_status()
-  if TurtleRPCharacterInfo["nsfw"] ~= "1" then
-    TurtleRPCharacterInfo["nsfw"] = "1"
+  if TurtleRP_AdminSB_Content1_NSFWButton:GetChecked() then
     TurtleRP_AdminSB_Content1_NSFWButton:SetChecked(true)
   else
-    TurtleRPCharacterInfo["nsfw"] = "0"
     TurtleRP_AdminSB_Content1_NSFWButton:SetChecked(false)
   end
-  TurtleRPCharacters[UnitName("player")] = TurtleRPCharacterInfo
-  TurtleRP.save_general(TurtleRPCharacterInfo["nsfw"])
 end
 
 function TurtleRP.change_ic_status()
@@ -443,6 +720,12 @@ function TurtleRP.save_general()
   local title = TurtleRP_AdminSB_Content1_TitleInput:GetText()
   TurtleRP_AdminSB_Content1_TitleInput:ClearFocus()
   TurtleRPCharacterInfo["title"] = TurtleRP.validateBeforeSaving(title)
+  local r, g, b = TurtleRP_AdminSB_Content1_ClassColorButton:GetBackdropColor()
+  TurtleRPCharacterInfo["class_color"] = TurtleRP.rgb2hex(r, g, b)
+  local pendingIcons = TurtleRP_IconSelector and TurtleRP_IconSelector.selectedIconIndex or {}
+  if pendingIcons["icon"] ~= nil then
+    TurtleRPCharacterInfo["icon"] = pendingIcons["icon"]
+  end
   local ic_info = TurtleRP_AdminSB_Content1_ICScrollBox_ICInfoInput:GetText()
   TurtleRP_AdminSB_Content1_ICScrollBox_ICInfoInput:ClearFocus()
   TurtleRPCharacterInfo["ic_info"] = TurtleRP.validateBeforeSaving(ic_info)
@@ -455,6 +738,10 @@ function TurtleRP.save_general()
   local ooc_pronouns = TurtleRP_AdminSB_Content1_OOCPronounsInput:GetText()
   TurtleRP_AdminSB_Content1_OOCPronounsInput:ClearFocus()
   TurtleRPCharacterInfo["ooc_pronouns"] = TurtleRP.validateBeforeSaving(ooc_pronouns)
+
+  TurtleRPCharacterInfo["nsfw"] = TurtleRP_AdminSB_Content1_NSFWButton:GetChecked() and "1" or "0"
+
+
   TurtleRPCharacters[UnitName("player")] = TurtleRPCharacterInfo
   TurtleRP.setCharacterIcon()
 end
@@ -492,6 +779,18 @@ function TurtleRP.save_at_a_glance()
   local aag3TitleText = TurtleRP_AdminSB_Content2_AAG3TitleInput:GetText()
   TurtleRP_AdminSB_Content2_AAG3TitleInput:ClearFocus()
   TurtleRPCharacterInfo["atAGlance3Title"] = TurtleRP.validateBeforeSaving(aag3TitleText)
+
+  local pendingIcons = TurtleRP_IconSelector and TurtleRP_IconSelector.selectedIconIndex or {}
+  if pendingIcons["atAGlance1Icon"] ~= nil then
+    TurtleRPCharacterInfo["atAGlance1Icon"] = pendingIcons["atAGlance1Icon"]
+  end
+  if pendingIcons["atAGlance2Icon"] ~= nil then
+    TurtleRPCharacterInfo["atAGlance2Icon"] = pendingIcons["atAGlance2Icon"]
+  end
+  if pendingIcons["atAGlance3Icon"] ~= nil then
+    TurtleRPCharacterInfo["atAGlance3Icon"] = pendingIcons["atAGlance3Icon"]
+  end
+
   TurtleRPCharacters[UnitName("player")] = TurtleRPCharacterInfo
   TurtleRP.setAtAGlanceIcons()
 end
@@ -501,20 +800,90 @@ function TurtleRP.save_description()
   TurtleRP_AdminSB_Content3_DescriptionScrollBox_DescriptionInput:ClearFocus()
   TurtleRPCharacterInfo["description"] = TurtleRP.validateBeforeSaving(description)
   TurtleRPCharacters[UnitName("player")] = TurtleRPCharacterInfo
+  TurtleRP.RefreshAdminStateSnapshot()
 end
 function TurtleRP.save_notes()
+  local short_note = TurtleRP_AdminSB_Content4_ShortNoteBox_Input:GetText()
+  TurtleRP_AdminSB_Content4_ShortNoteBox_Input:ClearFocus()
+  TurtleRPCharacterInfo["short_note"] = TurtleRP.validateBeforeSaving(short_note) or ""
   local notes = TurtleRP_AdminSB_Content4_NotesScrollBox_NotesInput:GetText()
   TurtleRP_AdminSB_Content4_NotesScrollBox_NotesInput:ClearFocus()
   TurtleRPCharacterInfo["notes"] = notes
+  TurtleRPCharacters[UnitName("player")] = TurtleRPCharacterInfo
+  if TurtleRP.currentlyViewedPlayer == UnitName("player") and TurtleRP_CharacterDetails_Notes:IsShown() then
+    TurtleRP_CharacterDetails_Notes_NotesScrollBox_NotesContent_NotesInput:SetText(TurtleRPCharacterInfo["notes"] or "")
+    TurtleRP_CharacterDetails_Notes_ShortNoteBox_Input:SetText(TurtleRPCharacterInfo["short_note"] or "")
+  end
+  TurtleRP.RefreshAdminStateSnapshot()
 end
 function TurtleRP.save_character_notes()
-  local notes = TurtleRP_CharacterDetails_Notes_NotesScrollBox_NotesInput:GetText()
-  TurtleRP_CharacterDetails_Notes_NotesScrollBox_NotesInput:ClearFocus()
-  TurtleRPCharacterInfo["character_notes"][TurtleRP.currentlyViewedPlayer] = notes
+  local notes = TurtleRP_CharacterDetails_Notes_NotesScrollBox_NotesContent_NotesInput:GetText()
+  TurtleRP_CharacterDetails_Notes_NotesScrollBox_NotesContent_NotesInput:ClearFocus()
+  local short_note = TurtleRP_CharacterDetails_Notes_ShortNoteBox_Input:GetText()
+  TurtleRP_CharacterDetails_Notes_ShortNoteBox_Input:ClearFocus()
+  if TurtleRP.currentlyViewedPlayer == UnitName("player") then
+    TurtleRPCharacterInfo["notes"] = notes
+    TurtleRPCharacterInfo["short_note"] = TurtleRP.validateBeforeSaving(short_note) or ""
+    TurtleRPCharacters[UnitName("player")] = TurtleRPCharacterInfo
+  else
+    TurtleRPCharacterInfo["character_notes"][TurtleRP.currentlyViewedPlayer] = notes
+    if TurtleRPCharacterInfo["character_short_notes"] == nil then
+      TurtleRPCharacterInfo["character_short_notes"] = {}
+    end
+    TurtleRPCharacterInfo["character_short_notes"][TurtleRP.currentlyViewedPlayer] =
+      TurtleRP.validateBeforeSaving(short_note) or ""
+  end
+end
+-- This entire function is being implemented in March/April of 2026. It exists only to migrate old data. This can be removed in like, 6 months+.
+function TurtleRP.migrate_self_notes()
+  local playerName = UnitName("player")
+  if TurtleRPCharacterInfo["character_notes"] == nil then
+    TurtleRPCharacterInfo["character_notes"] = {}
+  end
+  if TurtleRPCharacterInfo["character_short_notes"] == nil then
+    TurtleRPCharacterInfo["character_short_notes"] = {}
+  end
+  if TurtleRPCharacterInfo["notes"] == nil then
+    TurtleRPCharacterInfo["notes"] = ""
+  end
+  if TurtleRPCharacterInfo["short_note"] == nil then
+    TurtleRPCharacterInfo["short_note"] = ""
+  end
+  local old_self_notes = TurtleRPCharacterInfo["character_notes"][playerName]
+  if (TurtleRPCharacterInfo["notes"] == nil or TurtleRPCharacterInfo["notes"] == "")
+    and old_self_notes ~= nil and old_self_notes ~= "" then
+    TurtleRPCharacterInfo["notes"] = old_self_notes
+  end
+  local old_self_short = TurtleRPCharacterInfo["character_short_notes"][playerName]
+  if (TurtleRPCharacterInfo["short_note"] == nil or TurtleRPCharacterInfo["short_note"] == "")
+    and old_self_short ~= nil and old_self_short ~= "" then
+    TurtleRPCharacterInfo["short_note"] = old_self_short
+  end
+  TurtleRPCharacters[UnitName("player")] = TurtleRPCharacterInfo
+  TurtleRPPlayerProfiles[TurtleRPSettings["selected_profile"]] = TurtleRPCharacterInfo
 end
 
 function TurtleRP.canChat()
     return UnitLevel("player") >= TurtleRP.minChatLevel
+end
+
+function TurtleRP.GetVersionNumberParts(versionString)
+  versionString = versionString or ""
+  local _, _, major, minor, patch = string.find(versionString, "^(%d+)%.(%d+)%.(%d+)$")
+  return tonumber(major) or 0, tonumber(minor) or 0, tonumber(patch) or 0
+end
+
+function TurtleRP.IsVersionOlder(versionA, versionB)
+  local a1, a2, a3 = TurtleRP.GetVersionNumberParts(versionA)
+  local b1, b2, b3 = TurtleRP.GetVersionNumberParts(versionB)
+
+  if a1 ~= b1 then
+    return a1 < b1
+  end
+  if a2 ~= b2 then
+    return a2 < b2
+  end
+  return a3 < b3
 end
 
 -- Offer to join /rp channel upon reaching level 10, or first login after installing/update.
@@ -666,18 +1035,14 @@ end
 function TurtleRP.ReplaceNamesInChat(text)
     if not text or not TurtleRPCharacters then return text end
     if TurtleRPSettings["chat_names"] ~= "1" then return text end
-    local pattern = "(|Hplayer:([^:]+)|h%[)([^%]]+)(%]%|h)"
-    return string.gsub(text, pattern, function(prefix, rawName, displayedName, suffix)
-        -- We have a bot in the Nordanaar rp discord named usertag. this removes the name to keep it a little more legible.
+    text = string.gsub(text, "(|Hplayer:([^:|]+)[^|]*|h%[)([^%]]+)(%]|h)", function(prefix, rawName, displayedName, suffix)
         if strlower(rawName) == "usertag" then
             return prefix .. "" .. suffix
         end
         local character = TurtleRPCharacters[rawName]
         if character and character.full_name and character.full_name ~= "" then
             local nameToUse = character.full_name
-            -- im selfish and want to keep my pretty custom gradiant
             local hasColor = string.find(nameToUse, "|[cC][fF][fF]")
-
             if not hasColor and character.class_color and character.class_color ~= "" then
                 return prefix .. "|cff" .. character.class_color .. nameToUse .. "|r" .. suffix
             else
@@ -686,6 +1051,7 @@ function TurtleRP.ReplaceNamesInChat(text)
         end
         return prefix .. displayedName .. suffix
     end)
+    return text
 end
 function TurtleRP.HookChatFrames()
     for i = 1, 7 do
@@ -693,13 +1059,143 @@ function TurtleRP.HookChatFrames()
         if frame and not frame.TurtleRPHooked then
             local originalAddMessage = frame.AddMessage
             frame.AddMessage = function(self, text, r, g, b, id)
-                text = TurtleRP.ReplaceNamesInChat(text)
+                local skipReplace = false
+                if text then
+                    local checkText = text
+                    checkText = string.gsub(checkText, "|c%x%x%x%x%x%x%x%x", "")
+                    checkText = string.gsub(checkText, "|r", "")
+                    checkText = string.gsub(checkText, "|H.-|h(.-)|h", "%1")
+                    checkText = string.lower(checkText)
+                    if string.find(checkText, "general")
+                    or string.find(checkText, "trade")
+                    or string.find(checkText, "world")
+                    or string.find(checkText, "hardcore")
+                    or string.find(checkText, "lookingforgroup")
+                    or string.find(checkText, "%f[%a]lfg%f[%A]") then
+                        skipReplace = true
+                    end
+                end
+                if not skipReplace then
+                    text = TurtleRP.ReplaceNamesInChat(text)
+                end
                 originalAddMessage(self, text, r, g, b, id)
             end
             frame.TurtleRPHooked = true
         end
     end
 end
+function TurtleRP.ShowProfileFromChatLink(playerName)
+    if not playerName or playerName == "" then
+        return
+    end
+
+    TurtleRP.currentlyViewedPlayer = playerName
+    TurtleRP.sendRequestForData("M", playerName)
+    TurtleRP.OpenProfile("general")
+end
+
+function TurtleRP.ShowChatPlayerMenu(playerName)
+    if not playerName or playerName == "" then
+        return
+    end
+
+    if not TurtleRP.ChatPlayerMenu then
+        TurtleRP.ChatPlayerMenu = CreateFrame("Frame", "TurtleRP_ChatPlayerMenu", UIParent, "UIDropDownMenuTemplate")
+    end
+
+    TurtleRP.chatMenuPlayerName = playerName
+
+    UIDropDownMenu_Initialize(TurtleRP.ChatPlayerMenu, function()
+        local info = UIDropDownMenu_CreateInfo()
+
+        info.text = playerName
+        info.isTitle = 1
+        info.notCheckable = 1
+        info.disabled = 1
+        UIDropDownMenu_AddButton(info)
+
+        info = UIDropDownMenu_CreateInfo()
+        info.text = "Whisper"
+        info.notCheckable = 1
+        info.func = function()
+            ChatFrame_SendTell(TurtleRP.chatMenuPlayerName)
+        end
+        UIDropDownMenu_AddButton(info)
+
+        info = UIDropDownMenu_CreateInfo()
+        info.text = "Invite"
+        info.notCheckable = 1
+        info.func = function()
+            InviteByName(TurtleRP.chatMenuPlayerName)
+        end
+        UIDropDownMenu_AddButton(info)
+
+        info = UIDropDownMenu_CreateInfo()
+        info.text = "Target"
+        info.notCheckable = 1
+        info.func = function()
+            TargetByName(TurtleRP.chatMenuPlayerName, true)
+        end
+        UIDropDownMenu_AddButton(info)
+
+        info = UIDropDownMenu_CreateInfo()
+		info.text = "Report Player"
+		info.notCheckable = 1
+		info.func = function()
+			CloseDropDownMenus()
+			if ToggleHelpFrame then
+				ToggleHelpFrame()
+			end
+			if HelpFrame and HelpFrame:IsShown() then
+				if HelpFrame_ShowFrame and HelpFrameOpenTicket then
+					HelpFrame_ShowFrame(HelpFrameOpenTicket)
+				end
+			end
+		end
+		UIDropDownMenu_AddButton(info)
+
+        info = UIDropDownMenu_CreateInfo()
+        info.text = "Show TurtleRP Profile"
+        info.notCheckable = 1
+        info.func = function()
+            TurtleRP.ShowProfileFromChatLink(TurtleRP.chatMenuPlayerName)
+        end
+        UIDropDownMenu_AddButton(info)
+
+        info = UIDropDownMenu_CreateInfo()
+        info.text = "Ignore Player"
+        info.notCheckable = 1
+        info.func = function()
+            AddIgnore(TurtleRP.chatMenuPlayerName)
+        end
+        UIDropDownMenu_AddButton(info)
+
+        info = UIDropDownMenu_CreateInfo()
+        info.text = "Cancel"
+        info.notCheckable = 1
+        info.func = function()
+            CloseDropDownMenus()
+        end
+        UIDropDownMenu_AddButton(info)
+    end)
+
+    if TurtleRP.ChatPlayerMenuDelayFrame then
+        TurtleRP.ChatPlayerMenuDelayFrame:SetScript("OnUpdate", nil)
+    else
+        TurtleRP.ChatPlayerMenuDelayFrame = CreateFrame("Frame")
+    end
+
+    local opened = false
+    TurtleRP.ChatPlayerMenuDelayFrame:SetScript("OnUpdate", function()
+        if opened then
+            TurtleRP.ChatPlayerMenuDelayFrame:SetScript("OnUpdate", nil)
+            return
+        end
+        opened = true
+        ToggleDropDownMenu(1, nil, TurtleRP.ChatPlayerMenu, "cursor", 24, -24)
+    end)
+end
+
 --New chat message to show player_name variable when shift clicking due to the hook overriding it
 function TurtleRP.HookPlayerLinkClicks()
     if TurtleRP.playerLinkHooked then
@@ -707,28 +1203,38 @@ function TurtleRP.HookPlayerLinkClicks()
     end
     TurtleRP.playerLinkHooked = true
     TurtleRP.originalSetItemRef = SetItemRef
-	   SetItemRef = function(link, text, button)
-		if IsShiftKeyDown() and link then
-			local _, _, linkType, playerName = string.find(link, "^(%a+):([^:]+)")
-			if linkType == "player" and playerName then
-				local message = "|cff999999Player:|r " .. playerName
-				if TurtleRP.IsDevProfile(playerName) then
-					message = message .. " [" .. TurtleRP.GetDevBadgeText() .. "|r]"
-				end
-				DEFAULT_CHAT_FRAME:AddMessage(message)
-			end
-		end
-    TurtleRP.originalSetItemRef(link, text, button)
+
+    SetItemRef = function(link, text, button)
+        if link then
+            local _, _, linkType, playerName = string.find(link, "^(%a+):([^:]+)")
+            if linkType == "player" and playerName then
+                if button == "RightButton" then
+                    TurtleRP.ShowChatPlayerMenu(playerName)
+                    return
+                end
+
+                if IsShiftKeyDown() then
+                    local message = "|cff999999Player:|r " .. playerName
+                    if TurtleRP.IsDevProfile(playerName) then
+                        message = message .. " [" .. TurtleRP.GetDevBadgeText() .. "|r]"
+                    end
+                    DEFAULT_CHAT_FRAME:AddMessage(message)
+                end
+            end
+        end
+
+        TurtleRP.originalSetItemRef(link, text, button)
+    end
 end
-end
+
 local f = CreateFrame("Frame")
 f:RegisterEvent("VARIABLES_LOADED")
 f:RegisterEvent("PLAYER_LEVEL_UP")
 f:RegisterEvent("PLAYER_ENTERING_WORLD")
 f:SetScript("OnEvent", function()
     if event == "VARIABLES_LOADED" then
-        TurtleRP.HookChatFrames() 
-		TurtleRP.HookPlayerLinkClicks()
+        TurtleRP.HookChatFrames()
+        TurtleRP.HookPlayerLinkClicks()
         if TurtleRP.OnLoad then
             TurtleRP.OnLoad()
         end
