@@ -17,15 +17,30 @@ function TurtleRP.SetDirectoryButtonsActive(enable)
     TurtleRP_DirectoryFrame_Directory_DeleteButton:Disable()
   end
 end
-
 function sort_users_by_key(user1, user2, sort_key, sort_by_order)
     local online1 = (user1.status == "Online") and 1 or 0
     local online2 = (user2.status == "Online") and 1 or 0
     if online1 ~= online2 then
         return online1 > online2
     end
+		local rawValue1 = user1[sort_key]
+		local rawValue2 = user2[sort_key]
+			if type(rawValue1) ~= "string" then rawValue1 = "" end
+			if type(rawValue2) ~= "string" then rawValue2 = "" end
+		local value1 = string.lower(rawValue1)
+		local value2 = string.lower(rawValue2)
+    if value1 ~= value2 then
+        if sort_by_order == 1 then
+            return value1 > value2
+        else
+            return value1 < value2
+        end
+    end
     local name1 = string.lower(user1.player_name or "")
     local name2 = string.lower(user2.player_name or "")
+    if sort_by_order == 1 then
+        return name1 > name2
+    end
     return name1 < name2
 end
 ----
@@ -112,30 +127,38 @@ function TurtleRP.updateDirectorySearch()
                 totalDirectoryOnline = totalDirectoryOnline + 1
                 isOnline = true
             end
-				local fullName = profile["full_name"] or ""
+            local fullName = profile["full_name"] or ""
 				local title = profile["title"] or ""
 				local zone = profile["zone"] or ""
-				local playerNameLower = string.lower(playerName or "")
-
-				local resultShown = true
-				if lowerSearch ~= "" then
-					local fullNameLower = string.lower(fullName)
-					local titleLower = string.lower(title)
-					local zoneLower = string.lower(zone)
-
-					local playerMatch = string.find(playerNameLower, lowerSearch, 1, true)
-					local nameMatch = string.find(fullNameLower, lowerSearch, 1, true)
-					local titleMatch = string.find(titleLower, lowerSearch, 1, true)
-					local zoneMatch = string.find(zoneLower, lowerSearch, 1, true)
-
-					if not (playerMatch or nameMatch or titleMatch or zoneMatch) then
-						resultShown = false
-					end
+				local shortNote = ""
+				if TurtleRPCharacterInfo["character_short_notes"]
+				and type(TurtleRPCharacterInfo["character_short_notes"][playerName]) == "string" then
+					shortNote = TurtleRPCharacterInfo["character_short_notes"][playerName]
 				end
+				local playerNameLower = string.lower(playerName or "")
+            local playerNameLower = string.lower(playerName or "")
+            local resultShown = true
+            if lowerSearch ~= "" then
+                local fullNameLower = string.lower(fullName)
+                local titleLower = string.lower(title)
+                local zoneLower = string.lower(zone)
+                local shortNoteLower = string.lower(shortNote)
+
+                local playerMatch = string.find(playerNameLower, lowerSearch, 1, true)
+                local nameMatch = string.find(fullNameLower, lowerSearch, 1, true)
+                local titleMatch = string.find(titleLower, lowerSearch, 1, true)
+                local zoneMatch = string.find(zoneLower, lowerSearch, 1, true)
+                local shortNoteMatch = string.find(shortNoteLower, lowerSearch, 1, true)
+
+                if not (playerMatch or nameMatch or titleMatch or zoneMatch or shortNoteMatch) then
+                    resultShown = false
+                end
+            end
             if resultShown then
                 searchResults[currentArrayNumber] = {
                     player_name = playerName,
                     full_name = fullName,
+                    character_short_notes = shortNote,
                     title = title,
                     zone = zone,
                     status = isOnline and "Online" or "Offline",
@@ -145,6 +168,7 @@ function TurtleRP.updateDirectorySearch()
             end
         end
     end
+
     if TurtleRP.sortByKey ~= nil and table.getn(searchResults) > 1 then
         table.sort(searchResults, function(a, b)
             return sort_users_by_key(a, b, TurtleRP.sortByKey, TurtleRP.sortByOrder)
@@ -184,21 +208,25 @@ function TurtleRP.renderDirectory(directoryOffset)
   if directoryOffset == 0 then
     directoryOffset = directoryOffset + 1
   end
-  for i=directoryOffset, directoryOffset+16 do
+  for i = directoryOffset, directoryOffset + 16 do
     local thisFrameName = "TurtleRP_DirectoryFrame_Directory_Button" .. currentFrameNumber
     getglobal(thisFrameName):Hide()
     if searchResults[i] then
       local thisCharacter = searchResults[i]
       getglobal(thisFrameName):Show()
       getglobal(thisFrameName .. "Name"):SetText(thisCharacter.player_name)
-      getglobal(thisFrameName .. "Variable"):SetText(
-        TurtleRP.secondColumn == "Character Name" and thisCharacter.full_name or thisCharacter.zone
-      )
-      getglobal(thisFrameName .. '_StatusOffline'):Show()
-      getglobal(thisFrameName .. '_StatusOnline'):Hide()
+      local secondColumnText = thisCharacter.full_name
+      if TurtleRP.secondColumn == "Zone" then
+        secondColumnText = thisCharacter.zone
+      elseif TurtleRP.secondColumn == "Short Note" then
+        secondColumnText = thisCharacter.character_short_notes
+      end
+      getglobal(thisFrameName .. "Variable"):SetText(secondColumnText or "")
+      getglobal(thisFrameName .. "_StatusOffline"):Show()
+      getglobal(thisFrameName .. "_StatusOnline"):Hide()
       if thisCharacter.status == "Online" then
-        getglobal(thisFrameName .. '_StatusOffline'):Hide()
-        getglobal(thisFrameName .. '_StatusOnline'):Show()
+        getglobal(thisFrameName .. "_StatusOffline"):Hide()
+        getglobal(thisFrameName .. "_StatusOnline"):Show()
       end
     end
     currentFrameNumber = currentFrameNumber + 1
@@ -222,12 +250,20 @@ function TurtleRP.get_players_online()
 end
 
 function TurtleRP.OpenDirectoryListing(frame)
-  TurtleRP.OpenProfile("general")
+  if TurtleRP.OpenProfile then
+    TurtleRP.OpenProfile("general")
+  else
+    UIPanelWindows["TurtleRP_CharacterDetails"] = { area = "left", pushable = 6 }
+    ShowUIPanel(TurtleRP_CharacterDetails)
+    if TurtleRP.OnBottomTabProfileClick then
+      TurtleRP.OnBottomTabProfileClick("general")
+    end
+  end
 end
 
 function TurtleRP.Directory_FrameDropDown_Initialize()
   local info;
-  local buttonTexts = { "Character Name", "Zone" }
+  local buttonTexts = { "Character Name", "Zone", "Short Note" }
   for i=1, getn(buttonTexts), 1 do
     info = {};
     info.text = buttonTexts[i];
