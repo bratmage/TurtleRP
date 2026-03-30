@@ -98,10 +98,18 @@
 				  info.checked = false
 				  local itemName = item.name
 				  info.func = function()
-					TurtleRP_ChatBox_ChatTypeDropdown_Text:SetText(itemName)
-					TurtleRP.currentChatType = itemName
-					CloseDropDownMenus()
-				  end
+					  TurtleRP_ChatBox_ChatTypeDropdown_Text:SetText(itemName)
+					  TurtleRP.currentChatType = itemName
+
+					 if itemName == "Emote" then
+					  TurtleRP_ChatBox_AutoEmoteNameButton:SetChecked(TurtleRPSettings["auto_emote_name"] == "1" and true or false)
+					  TurtleRP_ChatBox_AutoEmoteNameButton:Show()
+					else
+					  TurtleRP_ChatBox_AutoEmoteNameButton:Hide()
+					end
+
+					  CloseDropDownMenus()
+					end
 				  UIDropDownMenu_AddButton(info)
 				end
 			  end)
@@ -180,7 +188,45 @@
           </EditBox>
         </ScrollChild>
       </ScrollFrame>
-
+      <CheckButton name="$parent_AutoEmoteNameButton" inherits="UICheckButtonTemplate">
+        <Size>
+          <AbsDimension x="24" y="24" />
+        </Size>
+        <Anchors>
+          <Anchor point="BOTTOMLEFT" relativeTo="$parent" relativePoint="BOTTOMLEFT">
+            <Offset>
+              <AbsDimension x="18" y="16"/>
+            </Offset>
+          </Anchor>
+        </Anchors>
+        <Layers>
+          <Layer level="OVERLAY">
+            <FontString name="$parent_Label" inherits="GameFontNormalSmall" text="Include Name before Emote">
+              <Anchors>
+                <Anchor point="LEFT" relativeTo="$parent" relativePoint="RIGHT">
+                  <Offset>
+                    <AbsDimension x="2" y="1"/>
+                  </Offset>
+                </Anchor>
+              </Anchors>
+            </FontString>
+          </Layer>
+        </Layers>
+			<Scripts>
+			  <OnLoad>
+				if TurtleRPSettings["auto_emote_name"] == nil then
+				  TurtleRPSettings["auto_emote_name"] = "1"
+				end
+				this:SetChecked(TurtleRPSettings["auto_emote_name"] == "1" and true or false)
+			  </OnLoad>
+			  <OnClick>
+				TurtleRPSettings["auto_emote_name"] = this:GetChecked() and "1" or "0"
+			  </OnClick>
+			  <OnShow>
+				this:SetChecked(TurtleRPSettings["auto_emote_name"] == "1" and true or false)
+			  </OnShow>
+			</Scripts>
+      </CheckButton>
       <Button name="$parent_SendRPText" inherits="UIPanelButtonTemplate" movable="true" text="Send">
         <Size>
           <AbsDimension x="60" y="25"/>
@@ -208,10 +254,12 @@
 
     </Frames>
     <Scripts>
-      <OnShow>
-        TurtleRP.currentChatType = nil
-        TurtleRP_ChatBox_ChatTypeDropdown_Text:SetText("Chat Type")
-      </OnShow>
+		<OnShow>
+		  TurtleRP.currentChatType = nil
+		  TurtleRP_ChatBox_ChatTypeDropdown_Text:SetText("Chat Type")
+		  TurtleRP_ChatBox_AutoEmoteNameButton:SetChecked(TurtleRPSettings["auto_emote_name"] == "1" and true or false)
+		  TurtleRP_ChatBox_AutoEmoteNameButton:Hide()
+		</OnShow>
       <OnMouseDown>
         this:StartMoving()
       </OnMouseDown>
