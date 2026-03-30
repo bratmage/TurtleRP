@@ -454,18 +454,20 @@
                     WhoFrameDropDown_OnEvent()
                   </OnEvent>
                   <OnMouseUp>
-                    local textForSort = 'full_name'
-                    if TurtleRP.secondColumn == "Zone" then
-                      textForSort = 'zone'
-                    end
-                    if TurtleRP.sortByKey == textForSort then
-                      TurtleRP.sortByOrder = TurtleRP.sortByOrder == 0 and 1 or 0
-                    end
-                    TurtleRP.sortByKey = textForSort
-                    TurtleRP.updateDirectorySearch()
-                    TurtleRP_DirectoryFrame_Directory_ScrollFrameScrollBar:SetValue(0)
-                    TurtleRP.Directory_ScrollBar_Update()
-                  </OnMouseUp>
+					  local textForSort = 'full_name'
+					  if TurtleRP.secondColumn == "Zone" then
+						textForSort = 'zone'
+					  elseif TurtleRP.secondColumn == "Short Note" then
+						textForSort = 'short_note'
+					  end
+					  if TurtleRP.sortByKey == textForSort then
+						TurtleRP.sortByOrder = TurtleRP.sortByOrder == 0 and 1 or 0
+					  end
+					  TurtleRP.sortByKey = textForSort
+					  TurtleRP.updateDirectorySearch()
+					  TurtleRP_DirectoryFrame_Directory_ScrollFrameScrollBar:SetValue(0)
+					  TurtleRP.Directory_ScrollBar_Update()
+					</OnMouseUp>
                 </Scripts>
               </Frame>
             </Frames>
