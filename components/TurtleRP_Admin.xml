@@ -193,7 +193,7 @@
 			  <Anchors>
 				<Anchor point="TOPLEFT" relativeTo="$parent" relativePoint="TOPLEFT">
 				  <Offset>
-					<AbsDimension x="0" y="0" />
+					<AbsDimension x="0" y="5" />
 				  </Offset>
 				</Anchor>
 			  </Anchors>
@@ -376,6 +376,7 @@
               </OnClick>
             </Scripts>
           </CheckButton>
+		  <!-- Save Button -->
           <Button name="$parent_SaveButton" inherits="UIPanelButtonGrayTemplate" text="Save">
             <Size>
               <AbsDimension x="50" y="25" />
@@ -396,6 +397,27 @@
               </OnClick>
             </Scripts>
           </Button>
+		  <!--Preview Button-->
+		  <Button name="$parent_PreviewButton" inherits="UIPanelButtonGrayTemplate" text="Preview">
+			  <Size>
+				<AbsDimension x="60" y="25" />
+			  </Size>
+			  <Anchors>
+				<Anchor point="BOTTOMRIGHT" relativeTo="$parent_SaveButton" relativePoint="TOPRIGHT">
+				  <Offset>
+					<AbsDimension x="0" y="4"/>
+				  </Offset>
+				</Anchor>
+			  </Anchors>
+			  <Scripts>
+				<OnLoad>
+				  this:SetFont("Fonts\\FRIZQT__.ttf", 10)
+				</OnLoad>
+				<OnClick>
+				  TurtleRP.OpenAdminProfilePreview()
+				</OnClick>
+			  </Scripts>
+			</Button>
           <!-- Icon Button -->
           <Button name="$parent_IconButton">
             <Size>
@@ -440,11 +462,12 @@
             </Backdrop>
             <HighlightTexture alphaMode="ADD" file="Interface\Buttons\CancelButton-Highlight"/>
             <Scripts>
-              <OnClick>
-                TurtleRPCharacterInfo['icon'] = ""
-                TurtleRP.save_general()
-              </OnClick>
-            </Scripts>
+			  <OnClick>
+				TurtleRP_IconSelector.selectedIconIndex = TurtleRP_IconSelector.selectedIconIndex or {}
+				TurtleRP_IconSelector.selectedIconIndex["icon"] = ""
+				TurtleRP.setCharacterIcon()
+			  </OnClick>
+			</Scripts>
           </Button>
           <!-- Class Color Button -->
           <Button name="$parent_ClassColorButton">
@@ -1204,11 +1227,12 @@
             </Backdrop>
             <HighlightTexture alphaMode="ADD" file="Interface\Buttons\CancelButton-Highlight"/>
             <Scripts>
-              <OnClick>
-                TurtleRPCharacterInfo['atAGlance1Icon'] = ""
-                TurtleRP.save_at_a_glance()
-              </OnClick>
-            </Scripts>
+			  <OnClick>
+				TurtleRP_IconSelector.selectedIconIndex = TurtleRP_IconSelector.selectedIconIndex or {}
+				TurtleRP_IconSelector.selectedIconIndex["atAGlance1Icon"] = ""
+				TurtleRP.setAtAGlanceIcons()
+			  </OnClick>
+			</Scripts>
           </Button>
           <!-- AAG1 frame scrolling -->
           <ScrollFrame name="$parent_AtAGlance1ScrollBox" enableMouse="true" inherits="UIPanelScrollFrameTemplate">
@@ -1335,12 +1359,13 @@
              </TileSize>
             </Backdrop>
             <HighlightTexture alphaMode="ADD" file="Interface\Buttons\CancelButton-Highlight"/>
-            <Scripts>
-              <OnClick>
-                TurtleRPCharacterInfo['atAGlance2Icon'] = ""
-                TurtleRP.save_at_a_glance()
-              </OnClick>
-            </Scripts>
+			<Scripts>
+			  <OnClick>
+				TurtleRP_IconSelector.selectedIconIndex = TurtleRP_IconSelector.selectedIconIndex or {}
+				TurtleRP_IconSelector.selectedIconIndex["atAGlance2Icon"] = ""
+				TurtleRP.setAtAGlanceIcons()
+			  </OnClick>
+			</Scripts>
           </Button>
           <!-- AAG2 frame scrolling -->
           <ScrollFrame name="$parent_AtAGlance2ScrollBox" enableMouse="true" inherits="UIPanelScrollFrameTemplate">
@@ -1467,12 +1492,13 @@
              </TileSize>
             </Backdrop>
             <HighlightTexture alphaMode="ADD" file="Interface\Buttons\CancelButton-Highlight"/>
-            <Scripts>
-              <OnClick>
-                TurtleRPCharacterInfo['atAGlance3Icon'] = ""
-                TurtleRP.save_at_a_glance()
-              </OnClick>
-            </Scripts>
+				<Scripts>
+				  <OnClick>
+					TurtleRP_IconSelector.selectedIconIndex = TurtleRP_IconSelector.selectedIconIndex or {}
+					TurtleRP_IconSelector.selectedIconIndex["atAGlance3Icon"] = ""
+					TurtleRP.setAtAGlanceIcons()
+				  </OnClick>
+				</Scripts>
           </Button>
           <!-- AAG3 frame scrolling -->
           <ScrollFrame name="$parent_AtAGlance3ScrollBox" enableMouse="true" inherits="UIPanelScrollFrameTemplate">
@@ -1552,7 +1578,7 @@
         <Layers>
     			<Layer level="OVERLAY">
             <!-- Flavour Text -->
-            <FontString name="$parent_FlavourText" justifyV="TOP" justifyH="LEFT" inherits="OVERLAY" font="Fonts\FRIZQT__.ttf" text="Give a more detailed description here, such as background and appearance. You may use basic HTML (h1, h2, h3, p), but your HTML must be well-formed or it will render incorrectly.">
+            <FontString name="$parent_FlavourText" justifyV="TOP" justifyH="LEFT" inherits="OVERLAY" font="Fonts\FRIZQT__.ttf" text="Give a more detailed description here, such as background and appearance.">
               <Size>
                 <AbsDimension x="310" y="50"/>
               </Size>
@@ -1588,6 +1614,136 @@
           </Layer>
         </Layers>
         <Frames>
+		  <!-- Formatting Buttons Row -->
+		  <Button name="$parent_H1Button" inherits="UIPanelButtonGrayTemplate" text="H1">
+			<Size><AbsDimension x="30" y="20"/></Size>
+			<Anchors>
+			  <Anchor point="TOPLEFT" relativeTo="$parent_hr" relativePoint="BOTTOMLEFT">
+				<Offset><AbsDimension x="0" y="20"/></Offset>
+			  </Anchor>
+			</Anchors>
+			<Scripts>
+			  <OnClick>
+				TurtleRP.InsertDescriptionTag("h1")
+			  </OnClick>
+			</Scripts>
+		  </Button>
+
+		  <Button name="$parent_H2Button" inherits="UIPanelButtonGrayTemplate" text="H2">
+			<Size><AbsDimension x="30" y="20"/></Size>
+			<Anchors>
+			  <Anchor point="LEFT" relativeTo="$parent_H1Button" relativePoint="RIGHT">
+				<Offset><AbsDimension x="5" y="0"/></Offset>
+			  </Anchor>
+			</Anchors>
+			<Scripts>
+			  <OnClick>
+				TurtleRP.InsertDescriptionTag("h2")
+			  </OnClick>
+			</Scripts>
+		  </Button>
+
+		  <Button name="$parent_H3Button" inherits="UIPanelButtonGrayTemplate" text="H3">
+			<Size><AbsDimension x="30" y="20"/></Size>
+			<Anchors>
+			  <Anchor point="LEFT" relativeTo="$parent_H2Button" relativePoint="RIGHT">
+				<Offset><AbsDimension x="5" y="0"/></Offset>
+			  </Anchor>
+			</Anchors>
+			<Scripts>
+			  <OnClick>
+				TurtleRP.InsertDescriptionTag("h3")
+			  </OnClick>
+			</Scripts>
+		  </Button>
+
+		  <Button name="$parent_PButton" inherits="UIPanelButtonGrayTemplate" text="P">
+			<Size><AbsDimension x="30" y="20"/></Size>
+			<Anchors>
+			  <Anchor point="LEFT" relativeTo="$parent_H3Button" relativePoint="RIGHT">
+				<Offset><AbsDimension x="5" y="0"/></Offset>
+			  </Anchor>
+			</Anchors>
+			<Scripts>
+			  <OnClick>
+				TurtleRP.InsertDescriptionTag("p")
+			  </OnClick>
+			</Scripts>
+		  </Button>
+
+		  <CheckButton name="$parent_LeftButton" inherits="UICheckButtonTemplate">
+			  <Size><AbsDimension x="25" y="25"/></Size>
+			  <Anchors>
+				<Anchor point="LEFT" relativeTo="$parent_PButton" relativePoint="RIGHT">
+				  <Offset><AbsDimension x="75" y="0"/></Offset>
+				</Anchor>
+			  </Anchors>
+			  <Layers>
+				<Layer level="OVERLAY">
+				  <FontString name="$parent_Text" inherits="GameFontNormalSmall" text="L">
+					<Anchors>
+					  <Anchor point="CENTER"/>
+					</Anchors>
+				  </FontString>
+				</Layer>
+			  </Layers>
+			  <Scripts>
+				<OnLoad>
+				  this:SetChecked(1)
+				</OnLoad>
+				<OnClick>
+				  TurtleRP.SetDescriptionAlign("")
+				</OnClick>
+			  </Scripts>
+			</CheckButton>
+
+			<CheckButton name="$parent_CenterButton" inherits="UICheckButtonTemplate">
+			  <Size><AbsDimension x="25" y="25"/></Size>
+			  <Anchors>
+				<Anchor point="LEFT" relativeTo="$parent_LeftButton" relativePoint="RIGHT">
+				  <Offset><AbsDimension x="5" y="0"/></Offset>
+				</Anchor>
+			  </Anchors>
+			  <Layers>
+				<Layer level="OVERLAY">
+				  <FontString name="$parent_Text" inherits="GameFontNormalSmall" text="C">
+					<Anchors>
+					  <Anchor point="CENTER"/>
+					</Anchors>
+				  </FontString>
+				</Layer>
+			  </Layers>
+			  <Scripts>
+				<OnClick>
+				  TurtleRP.SetDescriptionAlign(":c")
+				</OnClick>
+			  </Scripts>
+			</CheckButton>
+
+			<CheckButton name="$parent_RightButton" inherits="UICheckButtonTemplate">
+			  <Size><AbsDimension x="25" y="25"/></Size>
+			  <Anchors>
+				<Anchor point="LEFT" relativeTo="$parent_CenterButton" relativePoint="RIGHT">
+				  <Offset><AbsDimension x="5" y="0"/></Offset>
+				</Anchor>
+			  </Anchors>
+			  <Layers>
+				<Layer level="OVERLAY">
+				  <FontString name="$parent_Text" inherits="GameFontNormalSmall" text="R">
+					<Anchors>
+					  <Anchor point="CENTER"/>
+					</Anchors>
+				  </FontString>
+				</Layer>
+			  </Layers>
+			  <Scripts>
+				<OnClick>
+				  TurtleRP.SetDescriptionAlign(":r")
+				</OnClick>
+			  </Scripts>
+			</CheckButton>
+
+		  <!-- Save Button in Description -->
           <Button name="$parent_SaveButton" inherits="UIPanelButtonGrayTemplate" text="Save">
             <Size>
               <AbsDimension x="50" y="25" />
@@ -1608,6 +1764,27 @@
               </OnClick>
             </Scripts>
           </Button>
+		  <!-- Preview button in Description -->
+		  <Button name="$parent_PreviewButton" inherits="UIPanelButtonGrayTemplate" text="Preview">
+			  <Size>
+				<AbsDimension x="60" y="25" />
+			  </Size>
+			  <Anchors>
+				<Anchor point="RIGHT" relativeTo="$parent_SaveButton" relativePoint="LEFT">
+				  <Offset>
+					<AbsDimension x="-6" y="0"/>
+				  </Offset>
+				</Anchor>
+			  </Anchors>
+			  <Scripts>
+				<OnLoad>
+				  this:SetFont("Fonts\\FRIZQT__.ttf", 10)
+				</OnLoad>
+				<OnClick>
+				  TurtleRP.OpenAdminDescriptionPreview()
+				</OnClick>
+			  </Scripts>
+			</Button>
           <!-- Description frame scrolling -->
           <ScrollFrame name="$parent_DescriptionScrollBox" enableMouse="true" inherits="UIPanelScrollFrameTemplate">
             <Size>
@@ -1661,17 +1838,21 @@
                   </Anchor>
                 </Anchors>
                 <FontString inherits="ChatFontNormal" />
-                <Scripts>
-                  <OnLoad>
-                    this:SetMaxLetters(2000)
-                    this:SetMultiLine(true)
-                  </OnLoad>
-                </Scripts>
+					<Scripts>
+					  <OnLoad>
+						this:SetMaxLetters(2000)
+						this:SetMultiLine(true)
+					  </OnLoad>
+					  <OnEscapePressed>
+						this:ClearFocus()
+					  </OnEscapePressed>
+					</Scripts>
               </EditBox>
             </ScrollChild>
           </ScrollFrame>
         </Frames>
       </Frame>
+	  <!-- Content4 is for the Notes page -->
       <Frame name="$parent_Content4" hidden="true">
         <Size>
           <AbsDimension x="320" y="352"/>
@@ -1721,7 +1902,7 @@
             </Texture>
           </Layer>
         </Layers>
-        <Frames>
+                <Frames>
           <Button name="$parent_SaveButton" inherits="UIPanelButtonGrayTemplate" text="Save">
             <Size>
               <AbsDimension x="50" y="25" />
@@ -1742,25 +1923,92 @@
               </OnClick>
             </Scripts>
           </Button>
+
+          <!-- Short private note -->
+          <Frame name="$parent_ShortNoteBox">
+            <Size>
+              <AbsDimension x="280" y="22" />
+            </Size>
+            <Anchors>
+              <Anchor point="TOPLEFT" relativeTo="$parent_hr" relativePoint="BOTTOMLEFT">
+                <Offset>
+                  <AbsDimension x="0" y="-10" />
+                </Offset>
+              </Anchor>
+            </Anchors>
+            <Backdrop bgFile="Interface\ChatFrame\ChatFrameBackground" edgeFile="Interface\ChatFrame\ChatFrameBackground" tile="true">
+              <EdgeSize>
+                <AbsValue val="0.5"/>
+              </EdgeSize>
+              <Color r="0" g="0" b="0" a="0.3" />
+              <BorderColor r="255" g="255" b="255" a="0" />
+            </Backdrop>
+            <Layers>
+              <Layer level="ARTWORK">
+                <FontString name="$parent_Placeholder" inherits="ChatFontNormal" text="Short Note - Appears in Tooltip/Directory">
+                  <Anchors>
+                    <Anchor point="LEFT" relativeTo="$parent" relativePoint="LEFT">
+                      <Offset>
+                        <AbsDimension x="5" y="0" />
+                      </Offset>
+                    </Anchor>
+                  </Anchors>
+                  <Color r="0.6" g="0.6" b="0.6" a="0.8" />
+                </FontString>
+              </Layer>
+            </Layers>
+            <Frames>
+              <EditBox name="$parent_Input" visible="true" enableMouse="true" autoFocus="false">
+                <Size>
+                  <AbsDimension x="280" y="22" />
+                </Size>
+                <Anchors>
+                  <Anchor point="TOPLEFT" relativeTo="$parent" relativePoint="TOPLEFT">
+                    <Offset>
+                      <AbsDimension x="0" y="0" />
+                    </Offset>
+                  </Anchor>
+                  <Anchor point="TOPRIGHT" relativeTo="$parent" relativePoint="TOPRIGHT">
+                    <Offset>
+                      <AbsDimension x="0" y="0" />
+                    </Offset>
+                  </Anchor>
+                </Anchors>
+                <FontString inherits="ChatFontNormal" />
+                <Scripts>
+                  <OnLoad>
+                    this:SetMaxLetters(50)
+                    this:SetTextInsets(4, 4, 2, 2)
+                  </OnLoad>
+                  <OnEditFocusGained>
+                    TurtleRP_AdminSB_Content4_ShortNoteBox_Placeholder:Hide()
+                  </OnEditFocusGained>
+                  <OnEditFocusLost>
+                    if this:GetText() == "" then
+                      TurtleRP_AdminSB_Content4_ShortNoteBox_Placeholder:Show()
+                    end
+                  </OnEditFocusLost>
+                  <OnTextChanged>
+                    if this:GetText() == "" then
+                      TurtleRP_AdminSB_Content4_ShortNoteBox_Placeholder:Show()
+                    else
+                      TurtleRP_AdminSB_Content4_ShortNoteBox_Placeholder:Hide()
+                    end
+                  </OnTextChanged>
+                </Scripts>
+              </EditBox>
+            </Frames>
+          </Frame>
+
           <!-- Notes frame scrolling -->
           <ScrollFrame name="$parent_NotesScrollBox" enableMouse="true" inherits="UIPanelScrollFrameTemplate">
             <Size>
-              <AbsDimension x="280" y="300" />
+              <AbsDimension x="280" y="210" />
             </Size>
             <Anchors>
-              <Anchor point="LEFT" relativeTo="$parent_hr" relativePoint="LEFT">
+              <Anchor point="TOPLEFT" relativeTo="$parent_ShortNoteBox" relativePoint="BOTTOMLEFT">
                 <Offset>
                   <AbsDimension x="0" y="-10" />
-                </Offset>
-              </Anchor>
-              <Anchor point="TOP" relativeTo="$parent_hr" relativePoint="LEFT">
-                <Offset>
-                  <AbsDimension x="0" y="-10" />
-                </Offset>
-              </Anchor>
-              <Anchor point="BOTTOM" relativeTo="$parent_hr" relativePoint="LEFT">
-                <Offset>
-                  <AbsDimension x="0" y="-235" />
                 </Offset>
               </Anchor>
             </Anchors>
@@ -1776,6 +2024,20 @@
                 TurtleRP_AdminSB_Content4_NotesScrollBox_NotesInput:SetFocus()
               </OnMouseDown>
             </Scripts>
+            <Layers>
+              <Layer level="ARTWORK">
+                <FontString name="$parent_Placeholder" inherits="ChatFontNormal" text="Write private notes here. These are only for you.">
+                  <Anchors>
+                    <Anchor point="TOPLEFT" relativeTo="$parent" relativePoint="TOPLEFT">
+                      <Offset>
+                        <AbsDimension x="5" y="-5" />
+                      </Offset>
+                    </Anchor>
+                  </Anchors>
+                  <Color r="0.6" g="0.6" b="0.6" a="0.8" />
+                </FontString>
+              </Layer>
+            </Layers>
             <ScrollChild>
               <!-- Notes Input Box -->
               <EditBox name="$parent_NotesInput" visible="true" enableMouse="true" autoFocus="false">
@@ -1799,6 +2061,21 @@
                   <OnLoad>
                     this:SetMultiLine(true)
                   </OnLoad>
+                  <OnEditFocusGained>
+                    TurtleRP_AdminSB_Content4_NotesScrollBox_Placeholder:Hide()
+                  </OnEditFocusGained>
+                  <OnEditFocusLost>
+                    if this:GetText() == "" then
+                      TurtleRP_AdminSB_Content4_NotesScrollBox_Placeholder:Show()
+                    end
+                  </OnEditFocusLost>
+                  <OnTextChanged>
+                    if this:GetText() == "" then
+                      TurtleRP_AdminSB_Content4_NotesScrollBox_Placeholder:Show()
+                    else
+                      TurtleRP_AdminSB_Content4_NotesScrollBox_Placeholder:Hide()
+                    end
+                  </OnTextChanged>
                 </Scripts>
               </EditBox>
             </ScrollChild>
@@ -1819,7 +2096,7 @@
         <Layers>
     			<Layer level="OVERLAY">
             <!-- PVP Setting Text -->
-            <FontString name="$parent_PVPText" inherits="OVERLAY" font="Fonts\FRIZQT__.ttf" text="On During Battlegrounds">
+            <FontString name="$parent_PVPText" inherits="OVERLAY" font="Fonts\FRIZQT__.ttf" text="Disable Location Sharing While PvP Flagged">
               <Anchors>
                 <Anchor point="TOPLEFT">
                   <Offset>
@@ -1942,27 +2219,29 @@
         </Layers>
         <Frames>
           <!-- PVP Button -->
-          <CheckButton name="$parent_PVPButton" inherits="UICheckButtonTemplate">
-            <Size>
-              <AbsDimension x="25" y="25" />
-            </Size>
-            <Anchors>
-              <Anchor point="RIGHT" relativeTo="$parent_PVPText" relativePoint="RIGHT">
-                <Offset>
-                  <AbsDimension x="30" y="-1"/>
-                </Offset>
-              </Anchor>
-            </Anchors>
-            <Scripts>
-              <OnClick>
-                if TurtleRPSettings["bgs"] == "off" then
-                  TurtleRPSettings["bgs"] = "on"
-                else
-                  TurtleRPSettings["bgs"] = "off"
-                end
-              </OnClick>
-            </Scripts>
-          </CheckButton>
+			<CheckButton name="$parent_PVPButton" inherits="UICheckButtonTemplate">
+			  <Size>
+				<AbsDimension x="25" y="25" />
+			  </Size>
+			  <Anchors>
+				<Anchor point="RIGHT" relativeTo="$parent_PVPText" relativePoint="RIGHT">
+				  <Offset>
+					<AbsDimension x="80" y="-1"/>
+				  </Offset>
+				</Anchor>
+			  </Anchors>
+			  <Scripts>
+				<OnClick>
+				  if TurtleRPSettings["bgs"] == "off" then
+					TurtleRPSettings["bgs"] = "on"
+				  else
+					TurtleRPSettings["bgs"] = "off"
+				  end
+
+				  TurtleRP.pingWithLocationAndVersion("P")
+				</OnClick>
+			  </Scripts>
+			</CheckButton>
           <!-- Tray Button -->
           <CheckButton name="$parent_TrayButton" inherits="UICheckButtonTemplate">
             <Size>
@@ -1987,29 +2266,6 @@
               </OnClick>
             </Scripts>
           </CheckButton>
-          <Button name="$parent_TrayResetButton" inherits="UIPanelButtonTemplate2" text="Reset Tray Position">
-            <Size>
-              <AbsDimension x="132" y="24" />
-            </Size>
-            <Anchors>
-              <Anchor point="LEFT" relativeTo="$parent_TrayButton" relativePoint="RIGHT">
-                <Offset>
-                  <AbsDimension x="4" y="0"/>
-                </Offset>
-              </Anchor>
-            </Anchors>
-            <Scripts>
-              <OnClick>
-                  TurtleRP_IconTray:ClearAllPoints()
-                  TurtleRP_IconTray:SetPoint("CENTER", "UIParent")
-                  TurtleRP_IconTray:Show()
-
-                  TurtleRPSettings["tray"] = "1"
-
-                  TurtleRP_AdminSB_Content5_TrayButton:SetChecked(1)
-              </OnClick>
-            </Scripts>
-          </Button>
           <!-- Name Button -->
           <CheckButton name="$parent_NameButton" inherits="UICheckButtonTemplate">
             <Size>
@@ -2149,54 +2405,76 @@
 				  </OnClick>
 				</Scripts>
 			  </CheckButton>
-        <Frame name="$parent_ProfileDropdown" inherits="UIDropDownMenuTemplate" enableMouse="true">
-          <Size>
-            <AbsDimension x="70" y="20" />
-          </Size>
-          <Anchors>
-            <Anchor point="TOPLEFT" relativeTo="$parent_SelectProfileText" relativePoint="BOTTOMLEFT">
-              <Offset>
-                <AbsDimension x="-20" y="-5" />
-              </Offset>
-            </Anchor>
-          </Anchors>
-          <Layers>
-            <Layer level="OVERLAY">
-              <FontString name="$parent_Text" inherits="GameFontHighlightSmall" text="Selected Profile">
-                <Anchors>
-                  <Anchor point="TOPLEFT">
-                    <Offset>
-                      <AbsDimension x="24" y="-8"/>
-                    </Offset>
-                  </Anchor>
-                </Anchors>
-              </FontString>
-            </Layer>
-          </Layers>
-          <Scripts>
-            <OnLoad>
-              getglobal(this:GetName() .. "Text"):Hide()
-              TurtleRP.InitializeRPStyleDropdown(this, TurtleRPDropdownOptions["selected_profile"])
-            </OnLoad>
-          </Scripts>
-        </Frame>
-        <Button name="$parent_SaveButton" inherits="UIPanelButtonTemplate2" text="Load Selected Profile">
-            <Size>
-              <AbsDimension x="148" y="25" />
-            </Size>
-            <Anchors>
-              <Anchor point="LEFT" relativeTo="$parent_ProfileDropdown" relativePoint="RIGHT">
-                <Offset>
-                  <AbsDimension x="84" y="2"/>
-                </Offset>
-              </Anchor>
-            </Anchors>
-        		<Scripts>
-              <OnClick>
-                TurtleRP.change_character_profile()
-              </OnClick>
-            </Scripts>
-          </Button>
+			<Frame name="$parent_ProfileDropdown" inherits="UIDropDownMenuTemplate" enableMouse="true">
+			  <Size>
+				<AbsDimension x="120" y="20" />
+			  </Size>
+			  <Anchors>
+				<Anchor point="TOPLEFT" relativeTo="$parent_SelectProfileText" relativePoint="BOTTOMLEFT">
+				  <Offset>
+					<AbsDimension x="-20" y="-5" />
+				  </Offset>
+				</Anchor>
+			  </Anchors>
+			  <Layers>
+				<Layer level="OVERLAY">
+				  <FontString name="$parent_Text" inherits="GameFontHighlightSmall" text="Selected Profile">
+					<Anchors>
+					  <Anchor point="TOPLEFT">
+						<Offset>
+						  <AbsDimension x="24" y="-8"/>
+						</Offset>
+					  </Anchor>
+					</Anchors>
+				  </FontString>
+				</Layer>
+			  </Layers>
+			  <Scripts>
+				<OnLoad>
+				  getglobal(this:GetName() .. "Text"):Hide()
+				  TurtleRP.InitializeRPStyleDropdown(this, TurtleRPDropdownOptions["selected_profile"])
+				</OnLoad>
+			  </Scripts>
+			</Frame>
+			<Button name="$parent_SaveButton" inherits="UIPanelButtonTemplate2" text="Load Selected Profile">
+			  <Size>
+				<AbsDimension x="148" y="25" />
+			  </Size>
+			  <Anchors>
+				<Anchor point="LEFT" relativeTo="$parent_ProfileDropdown" relativePoint="RIGHT">
+				  <Offset>
+					<AbsDimension x="35" y="2"/>
+				  </Offset>
+				</Anchor>
+			  </Anchors>
+			  <Scripts>
+				<OnClick>
+				  TurtleRP.change_character_profile()
+				</OnClick>
+			  </Scripts>
+			</Button>
+			<Button name="$parent_TrayResetButton" inherits="UIPanelButtonTemplate2" text="Reset Tray Position">
+			  <Size>
+				<AbsDimension x="160" y="25" />
+			  </Size>
+			  <Anchors>
+				<Anchor point="TOPLEFT" relativeTo="$parent_ProfileDropdown" relativePoint="BOTTOMLEFT">
+				  <Offset>
+					<AbsDimension x="85" y="-6"/>
+				  </Offset>
+				</Anchor>
+			  </Anchors>
+			  <Scripts>
+				<OnClick>
+				  TurtleRP_IconTray:ClearAllPoints()
+				  TurtleRP_IconTray:SetPoint("CENTER", "UIParent")
+				  TurtleRP_IconTray:Show()
+
+				  TurtleRPSettings["tray"] = "1"
+				  TurtleRP_AdminSB_Content5_TrayButton:SetChecked(1)
+				</OnClick>
+			  </Scripts>
+			</Button>
         </Frames>
       </Frame>
       <Frame name="$parent_Content6" hidden="true">
@@ -2474,14 +2752,19 @@
         <HighlightTexture file="Interface\Buttons\UI-Common-MouseHilight" alphaMode="ADD"/>
       </Button> -->
       <Button name="$parent_SpellBookCloseButton" inherits="UIPanelCloseButton">
-        <Anchors>
-          <Anchor point="CENTER" relativeTo="SpellBookFrame" relativePoint="TOPRIGHT">
-            <Offset>
-              <AbsDimension x="-44" y="-26"/>
-            </Offset>
-          </Anchor>
-        </Anchors>
-      </Button>
+		  <Anchors>
+			<Anchor point="CENTER" relativeTo="SpellBookFrame" relativePoint="TOPRIGHT">
+			  <Offset>
+				<AbsDimension x="-44" y="-26"/>
+			  </Offset>
+			</Anchor>
+		  </Anchors>
+		<Scripts>
+		  <OnClick>
+			TurtleRP.RequestCloseAdmin()
+		  </OnClick>
+		</Scripts>
+		</Button>
       <CheckButton name="$parent_Tab1" inherits="TurtleRP_SBTabTemplate" id="1">
         <Anchors>
           <Anchor point="TOPLEFT" relativePoint="TOPRIGHT">
@@ -2590,30 +2873,47 @@
         </Anchors>
       </CheckButton>
     </Frames>
-    <Scripts>
-      <OnLoad>
-        if ShaguTweaks_config and ShaguTweaks_config["Darkened UI"] and ShaguTweaks_config["Darkened UI"] == 1 then
-          this.Material = this.Material or this:CreateTexture(nil, "OVERLAY")
-          this.Material:SetTexture("Interface\\Stationery\\StationeryTest1")
-          this.Material:SetWidth(325)
-          this.Material:SetHeight(355)
-          this.Material:SetPoint("TOPLEFT", this, 17, -74)
-          this.Material:SetVertexColor(.8, .8, .8)
-        end
-      </OnLoad>
-      <!-- <OnLoad>
-        SpellBookFrame_OnLoad();
-      </OnLoad>
-      <OnEvent>
-        SpellBookFrame_OnEvent();
-      </OnEvent>
-      <OnShow>
-        SpellBookFrame_OnShow();
-      </OnShow>
-      <OnHide>
-        SpellBookFrame_OnHide();
-      </OnHide> -->
-    </Scripts>
+<Scripts>
+	  <OnLoad>
+		if ShaguTweaks_config and ShaguTweaks_config["Darkened UI"] and ShaguTweaks_config["Darkened UI"] == 1 then
+		  this.Material = this.Material or this:CreateTexture(nil, "OVERLAY")
+		  this.Material:SetTexture("Interface\\Stationery\\StationeryTest1")
+		  this.Material:SetWidth(325)
+		  this.Material:SetHeight(355)
+		  this.Material:SetPoint("TOPLEFT", this, 17, -74)
+		  this.Material:SetVertexColor(.8, .8, .8)
+		end
+
+		local found = nil
+		for i = 1, table.getn(UISpecialFrames) do
+		  if UISpecialFrames[i] == this:GetName() then
+			found = 1
+			break
+		  end
+		end
+		if not found then
+		  table.insert(UISpecialFrames, this:GetName())
+		end
+	  </OnLoad>
+	  <OnMouseDown>
+		TurtleRP.ClearAdminFocus()
+	  </OnMouseDown>
+	  <OnHide>
+		TurtleRP.HandleAdminHidden()
+	  </OnHide>
+	  <!-- <OnLoad>
+		SpellBookFrame_OnLoad();
+	  </OnLoad>
+	  <OnEvent>
+		SpellBookFrame_OnEvent();
+	  </OnEvent>
+	  <OnShow>
+		SpellBookFrame_OnShow();
+	  </OnShow>
+	  <OnHide>
+		SpellBookFrame_OnHide();
+	  </OnHide> -->
+	</Scripts>
   </Frame>
 
   <Frame name="TurtleRP_IconSelector" parent="TurtleRP_AdminSB" hidden="true">
