@@ -44,7 +44,7 @@
     <!-- <HighlightTexture file="Interface\SpellBook\UI-SpellbookPanel-Tab-Highlight"/> -->
   </Button>
 
-  <Frame name="TurtleRP_CharacterDetails" toplevel="true" parent="UIParent" enableMouse="true" hidden="true">
+	<Frame name="TurtleRP_CharacterDetails" toplevel="true" parent="UIParent" enableMouse="true" hidden="true">
     <Size>
       <AbsDimension x="384" y="512"/>
     </Size>
@@ -772,7 +772,7 @@
                 </Offset>
               </Anchor>
             </Anchors>
-        		<Scripts>
+            <Scripts>
               <OnLoad>
                 this:SetFont("Fonts\\FRIZQT__.ttf", 10)
               </OnLoad>
@@ -781,11 +781,91 @@
               </OnClick>
             </Scripts>
           </Button>
+          <!-- Short private note title -->
+          <Frame name="$parent_ShortNoteBox">
+            <Size>
+              <AbsDimension x="1" y="22" />
+            </Size>
+            <Anchors>
+              <Anchor point="TOPLEFT" relativeTo="$parent" relativePoint="TOPLEFT">
+                <Offset>
+                  <AbsDimension x="10" y="-35" />
+                </Offset>
+              </Anchor>
+              <Anchor point="TOPRIGHT" relativeTo="$parent" relativePoint="TOPRIGHT">
+                <Offset>
+                  <AbsDimension x="0" y="-35" />
+                </Offset>
+              </Anchor>
+            </Anchors>
+            <Backdrop bgFile="Interface\ChatFrame\ChatFrameBackground" edgeFile="Interface\ChatFrame\ChatFrameBackground" tile="true">
+              <EdgeSize>
+                <AbsValue val="0.5"/>
+              </EdgeSize>
+              <Color r="0" g="0" b="0" a="0.3" />
+              <BorderColor r="255" g="255" b="255" a="0" />
+            </Backdrop>
+            <Layers>
+              <Layer level="ARTWORK">
+                <FontString name="$parent_Placeholder" inherits="ChatFontNormal" text="Short Note - Appears in Tooltip/Directory">
+                  <Anchors>
+                    <Anchor point="LEFT" relativeTo="$parent" relativePoint="LEFT">
+                      <Offset>
+                        <AbsDimension x="5" y="0" />
+                      </Offset>
+                    </Anchor>
+                  </Anchors>
+                  <Color r="0.6" g="0.6" b="0.6" a="0.8" />
+                </FontString>
+              </Layer>
+            </Layers>
+            <Frames>
+              <EditBox name="$parent_Input" visible="true" enableMouse="true" autoFocus="false">
+                <Size>
+                  <AbsDimension x="1" y="22" />
+                </Size>
+                <Anchors>
+                  <Anchor point="TOPLEFT" relativeTo="$parent" relativePoint="TOPLEFT">
+                    <Offset>
+                      <AbsDimension x="0" y="0" />
+                    </Offset>
+                  </Anchor>
+                  <Anchor point="TOPRIGHT" relativeTo="$parent" relativePoint="TOPRIGHT">
+                    <Offset>
+                      <AbsDimension x="0" y="0" />
+                    </Offset>
+                  </Anchor>
+                </Anchors>
+                <FontString inherits="ChatFontNormal" />
+                <Scripts>
+                  <OnLoad>
+                    this:SetMaxLetters(50)
+                    this:SetTextInsets(4, 4, 2, 2)
+                  </OnLoad>
+                  <OnEditFocusGained>
+                    TurtleRP_CharacterDetails_Notes_ShortNoteBox_Placeholder:Hide()
+                  </OnEditFocusGained>
+                  <OnEditFocusLost>
+                    if this:GetText() == "" then
+                      TurtleRP_CharacterDetails_Notes_ShortNoteBox_Placeholder:Show()
+                    end
+                  </OnEditFocusLost>
+                  <OnTextChanged>
+                    if this:GetText() == "" then
+                      TurtleRP_CharacterDetails_Notes_ShortNoteBox_Placeholder:Show()
+                    else
+                      TurtleRP_CharacterDetails_Notes_ShortNoteBox_Placeholder:Hide()
+                    end
+                  </OnTextChanged>
+                </Scripts>
+              </EditBox>
+            </Frames>
+          </Frame>
           <ScrollFrame name="$parent_NotesScrollBox" enableMouse="true" inherits="UIPanelScrollFrameTemplate">
             <Anchors>
               <Anchor point="TOPLEFT" relativeTo="$parent" relativePoint="TOPLEFT">
                 <Offset>
-                  <AbsDimension x="10" y="-30" />
+                  <AbsDimension x="10" y="-62" />
                 </Offset>
               </Anchor>
               <Anchor point="BOTTOMRIGHT" relativeTo="$parent" relativePoint="BOTTOMRIGHT">
@@ -803,12 +883,11 @@
             </Backdrop>
             <Scripts>
               <OnMouseDown>
-                TurtleRP_CharacterDetails_Notes_NotesScrollBox_NotesInput:SetFocus()
+                TurtleRP_CharacterDetails_Notes_NotesScrollBox_NotesContent_NotesInput:SetFocus()
               </OnMouseDown>
             </Scripts>
-            <ScrollChild>
-              <!-- Description Input Box -->
-              <EditBox name="$parent_NotesInput" visible="true" enableMouse="true" autoFocus="false">
+              <ScrollChild>
+              <Frame name="$parent_NotesContent">
                 <Size>
                   <AbsDimension x="280" y="2000" />
                 </Size>
@@ -818,19 +897,62 @@
                       <AbsDimension x="0" y="0" />
                     </Offset>
                   </Anchor>
-                  <Anchor point="BOTTOMLEFT" relativeTo="$parent" relativePoint="BOTTOMLEFT">
-                    <Offset>
-                      <AbsDimension x="0" y="0" />
-                    </Offset>
-                  </Anchor>
                 </Anchors>
-                <FontString inherits="ChatFontNormal" />
-                <Scripts>
-                  <OnLoad>
-                    this:SetMultiLine(true)
-                  </OnLoad>
-                </Scripts>
-              </EditBox>
+                <Layers>
+                  <Layer level="ARTWORK">
+                    <FontString name="$parent_Placeholder" inherits="ChatFontNormal" text="Write your private notes here. These are only for you.">
+                      <Anchors>
+                        <Anchor point="TOPLEFT" relativeTo="$parent" relativePoint="TOPLEFT">
+                          <Offset>
+                            <AbsDimension x="5" y="-5" />
+                          </Offset>
+                        </Anchor>
+                      </Anchors>
+                      <Color r="0.6" g="0.6" b="0.6" a="0.8" />
+                    </FontString>
+                  </Layer>
+                </Layers>
+                <Frames>
+                  <EditBox name="$parent_NotesInput" visible="true" enableMouse="true" autoFocus="false">
+                    <Size>
+                      <AbsDimension x="280" y="2000" />
+                    </Size>
+                    <Anchors>
+                      <Anchor point="TOPLEFT" relativeTo="$parent" relativePoint="TOPLEFT">
+                        <Offset>
+                          <AbsDimension x="0" y="0" />
+                        </Offset>
+                      </Anchor>
+                      <Anchor point="BOTTOMLEFT" relativeTo="$parent" relativePoint="BOTTOMLEFT">
+                        <Offset>
+                          <AbsDimension x="0" y="0" />
+                        </Offset>
+                      </Anchor>
+                    </Anchors>
+                    <FontString inherits="ChatFontNormal" />
+                    <Scripts>
+                      <OnLoad>
+                        this:SetMultiLine(true)
+                      </OnLoad>
+                      <OnEditFocusGained>
+                        TurtleRP_CharacterDetails_Notes_NotesScrollBox_NotesContent_Placeholder:Hide()
+                      </OnEditFocusGained>
+                      <OnEditFocusLost>
+                        if this:GetText() == "" then
+                          TurtleRP_CharacterDetails_Notes_NotesScrollBox_NotesContent_Placeholder:Show()
+                        end
+                      </OnEditFocusLost>
+                      <OnTextChanged>
+                        if this:GetText() == "" then
+                          TurtleRP_CharacterDetails_Notes_NotesScrollBox_NotesContent_Placeholder:Show()
+                        else
+                          TurtleRP_CharacterDetails_Notes_NotesScrollBox_NotesContent_Placeholder:Hide()
+                        end
+                      </OnTextChanged>
+                    </Scripts>
+                  </EditBox>
+                </Frames>
+              </Frame>
             </ScrollChild>
           </ScrollFrame>
         </Frames>
@@ -868,19 +990,23 @@
       </Button>
     </Frames>
     <Scripts>
-      <OnLoad>
-        if ShaguTweaks_config and ShaguTweaks_config["Darkened UI"] and ShaguTweaks_config["Darkened UI"] == 1 then
-          this.Material = this.Material or this:CreateTexture(nil, "OVERLAY")
-          this.Material:SetTexture("Interface\\Stationery\\StationeryTest1")
-          this.Material:SetWidth(300)
-          this.Material:SetHeight(350)
-          this.Material:SetPoint("TOPLEFT", this, 20, -84)
-          this.Material:SetVertexColor(.8, .8, .8)
-        end
-      </OnLoad>
-      <OnHide>
-        TurtleRP.SetDirectoryButtonsActive(false)
-      </OnHide>
-    </Scripts>
+	  <OnLoad>
+		this:RegisterForDrag("LeftButton")
+	  </OnLoad>
+	  <OnShow>
+		table.insert(UISpecialFrames, this:GetName())
+	  </OnShow>
+	  <OnDragStart>
+		this:StartMoving()
+	  </OnDragStart>
+	  <OnDragStop>
+		this:StopMovingOrSizing()
+	  </OnDragStop>
+	  <OnHide>
+		TurtleRP.SetDirectoryButtonsActive(false)
+		TurtleRP.previewCharacterInfo = nil
+		TurtleRP.previewSource = nil
+	  </OnHide>
+	</Scripts>
   </Frame>
 </Ui>
