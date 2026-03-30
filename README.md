@@ -12,44 +12,59 @@ For more information, visit [https://tempranova.github.io/turtlerp/](https://tem
 
 To archive from source code, use `git archive --output=TurtleRP-<v>.zip --prefix=TurtleRP/ HEAD`.
 
-## Version 1.3
-### - Character Name & Color now appear in chat windows!
-- This may be toggled on and off in the settings.
-### - A brand new Title field has been added!
-- No more long names. Titles appear before the name in the profile and the tooltip, but do not appear in chat.
-### - TurtleRP Map Icons now display IC/OOC!
-- Green icons if someone is IC, the old Grey/Purple is they are OOC. Make sure to start using your toggles!
-- Upon reaching Level 10, or logging in for the first time, a popup will appear prompting user to join the /rp chat channel.
-- Name 'usertag' in /rp (the bot we use in the Nordanaar RP discord!) no longer appears before message, only the discord handle.
-- Small bug fix regarding Alah'Thalas map tracking variable
-- Restructing of a lot of the Directory. Much smoother experience now, with auto updating when receiving new data.
-- Downloads ttrp profiles when someone sends a message in /rp. Gotta be in /rp, of course. If their name comes through as their IGN for the first message, next message should show the actual profile.
-- Dev badge added. Say hi if you see me.
+## Version 1.3.2
+### - Profile Preview Button added!
+- While editting your profile, you may click the preview button to see a 'live' version of it without saving.
+- Pressing esc key on a textbox now properly exits the textbox entry.
+- **New Unsaved Changes warning popup when attempting to exit or esc from a menu where you can unsaved changes, instead of just silently losing everything.**
+- Big HTML system overhaul in the description tab. Should work consistently now, and included formatting buttons for everyone to try out.
+### - Short Notes added!
+- This is a small personal note above the locally saved "notes" section when viewing a profile.
+- It's all locally saved only. Recommend like, a tiny description of the character or a relationship to know if you've met them before.
+- Short Note appears as a category to view in the directory. Filtering/sorting coming at a later date.
+- Notes are properly synced now. Previously, you could have both notes for yourself in your admin/edit window, and in your live profile. Now it is shared and you may edit either field.
+### - Auto Disable Location Sharing while PvP flagged setting.
+- The previous setting of disabled in battlegrounds didn't actually work at all. This replaces that and will automatic stop pinging your location once you are pvp flagged, and will go back to whatever setting you had after you are unflagged.
+- I understand the desire for disabling tooltips while in battlegrounds, but at the moment because of how they are saved, it will not be possible. Another thing for a future rewrite.
+### - RP Names and Title added to emotes!
+- /e (also known as /emote or /me) now automatically sends the emote with the Title and Full Name of the emoter.
+- You may still do /e | to send without any name preface at all
+- Added an "Include Name before Emote" toggle to the emote section of the turtle chatbox. Does what it says on the tin.
+### - Right Click in chat now has a View TurtleRP Profile button.
+- This will return no profile if they do not have TRP.
+- Shift clicking the name will also now show the player name/ign in addition to the RP Name.
+### - Various Small System Changes. Much smoother overall now.
+- Fixed the bug where profile tabs would sometimes overlap/double display when receiving new data.
+- Fixed several crashes regarding attempting to read blank information.
+- Fixed Reset Tray Position button sometimes not appearing.
+- Fixed some of the tooltips in the icon tray to properly display.
+- Renamed "Open Main Window" in icon tray to "Profile & Settings"
+- Implemented a version checker to send a notification when you have an out of date TurtleRP build. Sadly this is only going foward so please help out by informing people to update!
+- The goal of the version check is that, with it, we can eventually have enough people on this build that we can start implementing more icons!
+- Clean-up of lots of... questionable logic. Making thing smoother.
+
+
+**Known Issues**
+- Switching tabs with unsaved information does not "hold" that information. Save button is per page only. No unsaved warning popup when changing tabs.
+- /e sends the Title and Name regardless of your setting to enable or disable RP names.
+- Very niche case: If you previously used both old note systems on yourself, in admin and in the saved profile, it may appear that the saved profile one has "overwritten" the old notes. The old notes are still saved in your profile lua. I have a data migration set up to sync everything, but if both fields were filled, it does not "replace" one, only changes which is displayed. You may want to manually clean it up if you really care.
 
 
 ---
 ### To Do
 
-Tests
-
-- Want to add more icons, but currentVersion does not send outward, only downloads inward. This would lead to lua crashes if someone is not using an updates version of TRP. Not worth it yet.
-
 Bugs
 
-- Not disabled in BGs. Why have this setting if it doesn't work?
-- Profile Switching causing issues. Needs more investigation, please submit any here on github or to @takoy on discord.
+- Profile Switching causing issues. System rewrite likely for the future.
 - Some icons require you to search, rather than appear on the scroll list.
 
 Minor Bugs
 
 - Color pick is sometimes connected to other color picker instances
-- If you have Profile open, and a description comes back in the chat, it'll obscure the profile
-- Custom colors for emotes get overwritten
-- Slight adjustment in PvP text padding/spacing when icon added while PvP enabled
 
 To Do
 
-- More icons!
+- More icons (always.)
 - Revamp of the multiple profiles system, including a profile tab and integration of Incognito
 - Changes to the directory search to display results numbers rather than total numbers. Maybe add a counter of TRPs in a zone on the map. If you like XML please hmu 
 
@@ -65,6 +80,19 @@ To Do
 - Messages in /rp automatically add the player_name to the local database for the directory, even if they are in the download queue, just to allow for instant searching in the directory.
 - Queue system for downloading profiles from /rp. Prevents a small bit of chat throttle, but still an issue. Oh well.
 
+**1.3.0**
+= **Character Name & Color now appear in chat windows!**
+- This may be toggled on and off in the settings.
+= **A brand new Title field has been added!**
+- No more long names. Titles appear before the name in the profile and the tooltip, but do not appear in chat.
+= **TurtleRP Map Icons now display IC/OOC!**
+- Green icons if someone is IC, the old Grey/Purple is they are OOC. Make sure to start using your toggles!
+- Upon reaching Level 10, or logging in for the first time, a popup will appear prompting user to join the /rp chat channel.
+- Name 'usertag' in /rp (the bot we use in the Nordanaar RP discord!) no longer appears before message, only the discord handle.
+- Small bug fix regarding Alah'Thalas map tracking variable
+- Restructing of a lot of the Directory. Much smoother experience now, with auto updating when receiving new data.
+- Downloads ttrp profiles when someone sends a message in /rp. Gotta be in /rp, of course. If their name comes through as their IGN for the first message, next message should show the actual profile.
+- Dev badge added. Say hi if you see me.
 1.2.2
 - Extended Chatbox that allows messages past the 255 character limit now supports PARTY /p and RAID /r
 - Fixed bug where map dots would not appear in Ironforge.
