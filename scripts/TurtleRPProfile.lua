@@ -8,26 +8,53 @@ function TurtleRP.OpenProfile(openTo)
   TurtleRP_CharacterDetails_FrameTabButton2.bookType = "description"
   TurtleRP_CharacterDetails_FrameTabButton3.bookType = "notes"
 
+  if not TurtleRP.currentlyViewedPlayer or TurtleRP.currentlyViewedPlayer == "" then
+    TurtleRP.currentlyViewedPlayer = UnitName("player")
+  end
+
   UIPanelWindows["TurtleRP_CharacterDetails"] = { area = "left", pushable = 6 }
   ShowUIPanel(TurtleRP_CharacterDetails)
 
   TurtleRP.OnBottomTabProfileClick(openTo)
 end
 
+function TurtleRP.OpenProfilePreview(openTo)
+  TurtleRP_CharacterDetails_FrameTabButton1.bookType = "general"
+  TurtleRP_CharacterDetails_FrameTabButton2.bookType = "description"
+  TurtleRP_CharacterDetails_FrameTabButton3.bookType = "notes"
+
+  if not TurtleRP.currentlyViewedPlayer or TurtleRP.currentlyViewedPlayer == "" then
+    TurtleRP.currentlyViewedPlayer = UnitName("player")
+  end
+
+  TurtleRP_CharacterDetails:ClearAllPoints()
+
+  if TurtleRP_AdminSB and TurtleRP_AdminSB:IsShown() then
+    TurtleRP_CharacterDetails:SetPoint("TOPLEFT", TurtleRP_AdminSB, "TOPRIGHT", 20, 0)
+  else
+    TurtleRP_CharacterDetails:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
+  end
+
+  TurtleRP_CharacterDetails:Show()
+  TurtleRP.OnBottomTabProfileClick(openTo)
+end
+
 function TurtleRP.OnBottomTabProfileClick(bookType)
+  TurtleRP.currentProfileTab = bookType or "general"
+
   TurtleRP_CharacterDetails_General:Hide()
   TurtleRP_CharacterDetails_DescriptionScrollBox:Hide()
   TurtleRP_CharacterDetails_Notes:Hide()
 
-  if bookType == "general" then
+  if TurtleRP.currentProfileTab == "general" then
     TurtleRP.buildGeneral(TurtleRP.currentlyViewedPlayer)
   end
 
-  if bookType == "description" then
+  if TurtleRP.currentProfileTab == "description" then
     TurtleRP.buildDescription(TurtleRP.currentlyViewedPlayer)
   end
 
-  if bookType == "notes" then
+  if TurtleRP.currentProfileTab == "notes" then
     TurtleRP.buildNotes(TurtleRP.currentlyViewedPlayer)
   end
 end
@@ -65,10 +92,18 @@ function TurtleRP.ShowOrHideProfileDetails(lastFrame, characterInfo, frame, stri
 end
 
 function TurtleRP.buildGeneral(playerName)
+  playerName = playerName or TurtleRP.currentlyViewedPlayer or UnitName("player")
   TurtleRP.currentlyViewedPlayer = playerName
+  TurtleRP.currentProfileTab = "general"
 
-  TurtleRP.SetNameAndIcon(playerName)
-  local characterInfo = TurtleRPCharacters[playerName]
+  TurtleRP_CharacterDetails_DescriptionScrollBox:Hide()
+  TurtleRP_CharacterDetails_Notes:Hide()
+
+  local characterInfo = TurtleRP.previewCharacterInfo or TurtleRPCharacters[playerName]
+  TurtleRP.SetNameAndIcon(playerName, characterInfo)
+  if not characterInfo then
+    return
+  end
   local raceClassString = ""
   if characterInfo["keyM"] ~= nil then
     local classColor = characterInfo['class_color'] and characterInfo['class_color'] or TurtleRPClassData[characterInfo["class"]][4]
@@ -139,31 +174,48 @@ function TurtleRP.buildGeneral(playerName)
 end
 
 function TurtleRP.buildDescription(playerName)
+  playerName = playerName or TurtleRP.currentlyViewedPlayer or UnitName("player")
   TurtleRP.currentlyViewedPlayer = playerName
+  TurtleRP.currentProfileTab = "description"
 
-  local characterInfo = TurtleRPCharacters[playerName]
+  local characterInfo = TurtleRP.previewCharacterInfo or TurtleRPCharacters[playerName]
+  if not characterInfo then
+    return
+  end
+
   TurtleRP_CharacterDetails_General:Hide()
   TurtleRP_CharacterDetails_Notes:Hide()
 
-  TurtleRP_CharacterDetails_DescriptionScrollBox_DescriptionHolder_DescriptionHTML:SetText("")
-  TurtleRP_CharacterDetails_DescriptionScrollBox_DescriptionHolder_DescriptionHTML_TargetDescription:SetText("")
+  local htmlFrame = TurtleRP_CharacterDetails_DescriptionScrollBox_DescriptionHolder_DescriptionHTML
+  local plainTextFrame = TurtleRP_CharacterDetails_DescriptionScrollBox_DescriptionHolder_DescriptionHTML_TargetDescription
+  local holderFrame = TurtleRP_CharacterDetails_DescriptionScrollBox_DescriptionHolder
+
+  htmlFrame:SetText("")
+  plainTextFrame:SetText("")
+  holderFrame:SetHeight(50)
 
   if characterInfo["keyD"] ~= nil then
+    TurtleRP.SetNameAndIcon(playerName, characterInfo)
 
-    TurtleRP.SetNameAndIcon(playerName)
+    local descriptionText = characterInfo["description"] or ""
 
-    local replacedLineBreaks = gsub(characterInfo["description"], "@N", "%\n")
-    TurtleRP_CharacterDetails_DescriptionScrollBox_DescriptionHolder_DescriptionHTML:SetHeight(1000)
-    if string.find(characterInfo['description'], "<p>") then
-      TurtleRP_CharacterDetails_DescriptionScrollBox_DescriptionHolder_DescriptionHTML:SetText("<html><body>" .. replacedLineBreaks .. "<br /><br /><br /></body></html>")
-      TurtleRP_CharacterDetails_DescriptionScrollBox_DescriptionHolder_DescriptionHTML_TargetDescription:SetText("")
+    if TurtleRP.DescriptionHasSupportedMarkup(descriptionText) then
+      htmlFrame:SetHeight(1000)
+      holderFrame:SetHeight(1000)
+      htmlFrame:SetText(TurtleRP.SanitizeDescriptionHTML(descriptionText))
+      plainTextFrame:SetText("")
     else
-      TurtleRP_CharacterDetails_DescriptionScrollBox_DescriptionHolder_DescriptionHTML:SetText("")
-      TurtleRP_CharacterDetails_DescriptionScrollBox_DescriptionHolder_DescriptionHTML_TargetDescription:SetText(replacedLineBreaks)
-      local stringHeight = TurtleRP_CharacterDetails_DescriptionScrollBox_DescriptionHolder_DescriptionHTML_TargetDescription:GetHeight()
-      TurtleRP_CharacterDetails_DescriptionScrollBox_DescriptionHolder:SetHeight(stringHeight * 3)
-    end
+      local plainText = TurtleRP.NormalizePlainDescription(descriptionText)
+      htmlFrame:SetText("")
+      plainTextFrame:SetText(plainText or "")
 
+      if plainText == nil or plainText == "" then
+        holderFrame:SetHeight(50)
+      else
+        local textHeight = plainTextFrame:GetHeight() or 0
+        holderFrame:SetHeight(math.max(50, textHeight + 20))
+      end
+    end
   end
 
   TurtleRP_CharacterDetails_DescriptionScrollBox:Show()
@@ -173,27 +225,146 @@ function TurtleRP.buildDescription(playerName)
 end
 
 function TurtleRP.buildNotes(playerName)
+  playerName = playerName or TurtleRP.currentlyViewedPlayer or UnitName("player")
   TurtleRP.currentlyViewedPlayer = playerName
+  TurtleRP.currentProfileTab = "notes"
+
+  TurtleRP_CharacterDetails_General:Hide()
+  TurtleRP_CharacterDetails_DescriptionScrollBox:Hide()
 
   local characterInfo = TurtleRPCharacters[playerName]
-  TurtleRP.SetNameAndIcon(playerName)
-
-  if TurtleRPCharacterInfo['character_notes'][TurtleRP.currentlyViewedPlayer] ~= nil then
-    TurtleRP_CharacterDetails_Notes_NotesScrollBox_NotesInput:SetText(TurtleRPCharacterInfo['character_notes'][TurtleRP.currentlyViewedPlayer])
-  else
-    TurtleRP_CharacterDetails_Notes_NotesScrollBox_NotesInput:SetText("")
+  if not characterInfo then
+    return
   end
-
+  TurtleRP.SetNameAndIcon(playerName)
+  if playerName == UnitName("player") then
+    TurtleRP_CharacterDetails_Notes_NotesScrollBox_NotesContent_NotesInput:SetText(
+      TurtleRPCharacterInfo["notes"] or ""
+    )
+    TurtleRP_CharacterDetails_Notes_ShortNoteBox_Input:SetText(
+      TurtleRPCharacterInfo["short_note"] or ""
+    )
+  else
+    if TurtleRPCharacterInfo["character_notes"][TurtleRP.currentlyViewedPlayer] ~= nil then
+      TurtleRP_CharacterDetails_Notes_NotesScrollBox_NotesContent_NotesInput:SetText(
+        TurtleRPCharacterInfo["character_notes"][TurtleRP.currentlyViewedPlayer]
+      )
+    else
+      TurtleRP_CharacterDetails_Notes_NotesScrollBox_NotesContent_NotesInput:SetText("")
+    end
+    if TurtleRPCharacterInfo["character_short_notes"]
+      and TurtleRPCharacterInfo["character_short_notes"][TurtleRP.currentlyViewedPlayer] ~= nil then
+      TurtleRP_CharacterDetails_Notes_ShortNoteBox_Input:SetText(
+        TurtleRPCharacterInfo["character_short_notes"][TurtleRP.currentlyViewedPlayer]
+      )
+    else
+      TurtleRP_CharacterDetails_Notes_ShortNoteBox_Input:SetText("")
+    end
+  end
   TurtleRP_CharacterDetails_Notes:Show()
-
   TurtleRP_CharacterDetails_FrameTabButton1:SetNormalTexture("Interface\\Spellbook\\UI-Spellbook-Tab-Unselected")
   TurtleRP_CharacterDetails_FrameTabButton2:SetNormalTexture("Interface\\Spellbook\\UI-Spellbook-Tab-Unselected")
   TurtleRP_CharacterDetails_FrameTabButton3:SetNormalTexture("Interface\\Spellbook\\UI-SpellBook-Tab1-Selected")
 end
 
-function TurtleRP.SetNameAndIcon(playerName)
-  local characterInfo = TurtleRPCharacters[playerName]
-  if characterInfo["keyM"] ~= nil then
+function TurtleRP.DescriptionHasSupportedMarkup(text)
+  if not text or text == "" then
+    return false
+  end
+  local lowerText = string.lower(text)
+  return string.find(lowerText, "<%s*/?%s*h1[%s>]")
+      or string.find(lowerText, "<%s*/?%s*h2[%s>]")
+      or string.find(lowerText, "<%s*/?%s*h3[%s>]")
+      or string.find(lowerText, "<%s*/?%s*p[%s>]")
+      or string.find(lowerText, "<%s*br[%s/>]")
+end
+function TurtleRP.ExpandShortTags(text)
+  if not text then return "" end
+
+  local t = text
+  t = gsub(t, "<h1:c>", '<h1 align="center">')
+  t = gsub(t, "<h2:c>", '<h2 align="center">')
+  t = gsub(t, "<h3:c>", '<h3 align="center">')
+  t = gsub(t, "<p:c>",  '<p align="center">')
+
+  t = gsub(t, "<h1:r>", '<h1 align="right">')
+  t = gsub(t, "<h2:r>", '<h2 align="right">')
+  t = gsub(t, "<h3:r>", '<h3 align="right">')
+  t = gsub(t, "<p:r>",  '<p align="right">')
+
+  t = gsub(t, "<h1:l>", '<h1 align="left">')
+  t = gsub(t, "<h2:l>", '<h2 align="left">')
+  t = gsub(t, "<h3:l>", '<h3 align="left">')
+  t = gsub(t, "<p:l>",  '<p align="left">')
+
+  t = gsub(t, "</h1:c>", "</h1>")
+  t = gsub(t, "</h2:c>", "</h2>")
+  t = gsub(t, "</h3:c>", "</h3>")
+  t = gsub(t, "</p:c>",  "</p>")
+
+  t = gsub(t, "</h1:r>", "</h1>")
+  t = gsub(t, "</h2:r>", "</h2>")
+  t = gsub(t, "</h3:r>", "</h3>")
+  t = gsub(t, "</p:r>",  "</p>")
+
+  t = gsub(t, "</h1:l>", "</h1>")
+  t = gsub(t, "</h2:l>", "</h2>")
+  t = gsub(t, "</h3:l>", "</h3>")
+  t = gsub(t, "</p:l>",  "</p>")
+
+  return t
+end
+function TurtleRP.SanitizeDescriptionHTML(text)
+  if not text then
+    return ""
+  end
+
+  local sanitized = TurtleRP.ExpandShortTags(text)
+  sanitized = gsub(sanitized, "\r\n", "\n")
+  sanitized = gsub(sanitized, "\r", "\n")
+  sanitized = gsub(sanitized, "@N", "<br />")
+  sanitized = gsub(sanitized, "\n", "<br />")
+
+  sanitized = gsub(sanitized, "<%s*(/?)%s*([%a%d]+)(.-)>", function(closingSlash, tagName, attributes)
+    local tag = string.lower(tagName or "")
+    local isClosing = closingSlash == "/"
+    local lowerAttributes = string.lower(attributes or "")
+    if tag == "br" then
+      return "<br />"
+    end
+    if tag ~= "h1" and tag ~= "h2" and tag ~= "h3" and tag ~= "p" then
+      return ""
+    end
+    if isClosing then
+      return "</" .. tag .. ">"
+    end
+    local _, _, align = string.find(lowerAttributes, 'align%s*=%s*"(.-)"')
+    if not align then
+      _, _, align = string.find(lowerAttributes, "align%s*=%s*'(.-)'")
+    end
+    if align == "left" or align == "center" or align == "right" then
+      return "<" .. tag .. ' align="' .. align .. '">'
+    end
+    return "<" .. tag .. ">"
+  end)
+  return "<html><body>" .. sanitized .. "<br /><br /><br /></body></html>"
+end
+
+function TurtleRP.NormalizePlainDescription(text)
+  if not text then
+    return ""
+  end
+
+  local normalized = text
+  normalized = gsub(normalized, "\r\n", "\n")
+  normalized = gsub(normalized, "\r", "\n")
+  normalized = gsub(normalized, "@N", "\n")
+
+  return normalized
+end
+function TurtleRP.SetNameAndIcon(playerName, overrideCharacterInfo)
+  local characterInfo = overrideCharacterInfo or TurtleRPCharacters[playerName]
+  if characterInfo and characterInfo["keyM"] ~= nil then
     local nameToDisplay = characterInfo['full_name']
     if characterInfo['title'] and characterInfo['title'] ~= "" then
       nameToDisplay = characterInfo['title'] .. " " .. nameToDisplay
