@@ -10,7 +10,13 @@
 function TurtleRP.OpenAdmin()
   UIPanelWindows["TurtleRP_AdminSB"] = { area = "left", pushable = 0 }
 
+  TurtleRP.previewCharacterInfo = nil
+  TurtleRP.previewSource = nil
+  TurtleRP_IconSelector.selectedIconIndex = {}
+
   ShowUIPanel(TurtleRP_AdminSB)
+  TurtleRP.populate_interface_user_data()
+  TurtleRP.RefreshAdminStateSnapshot()
 
   TurtleRP_AdminSB_Tab1:SetNormalTexture("Interface\\Icons\\Spell_Nature_MoonGlow")
   TurtleRP_AdminSB_Tab1.tooltip = "Profile"
@@ -46,7 +52,48 @@ function TurtleRP.OpenAdmin()
   TurtleRP_AdminSB_SpellBookFrameTabButton2.bookType = "rp_style"
 
   TurtleRP.OnAdminTabClick(1)
+  TurtleRP.currentDescriptionAlign = ""
 
+end
+TurtleRP.currentDescriptionTag = "p"
+TurtleRP.currentDescriptionAlign = ""
+
+function TurtleRP.InsertDescriptionTag(tag)
+    TurtleRP.currentDescriptionTag = tag
+    TurtleRP.ApplyDescriptionTag()
+end
+
+function TurtleRP.SetDescriptionAlign(align)
+    TurtleRP.currentDescriptionAlign = align
+    if TurtleRP_AdminSB_Content3_LeftButton then
+        TurtleRP_AdminSB_Content3_LeftButton:SetChecked(align == "")
+    end
+    if TurtleRP_AdminSB_Content3_CenterButton then
+        TurtleRP_AdminSB_Content3_CenterButton:SetChecked(align == ":c")
+    end
+    if TurtleRP_AdminSB_Content3_RightButton then
+        TurtleRP_AdminSB_Content3_RightButton:SetChecked(align == ":r")
+    end
+end
+
+function TurtleRP.ApplyDescriptionTag()
+    local box = TurtleRP_AdminSB_Content3_DescriptionScrollBox_DescriptionInput
+    if not box then return end
+    local tag = TurtleRP.currentDescriptionTag or "p"
+    local align = TurtleRP.currentDescriptionAlign or ""
+    local openTag = "<" .. tag .. align .. ">"
+    local placeholder = "Your text here!"
+    local insertText = openTag .. " " .. placeholder .. " " .. "</" .. tag .. ">"
+    local existingText = box:GetText() or ""
+	local startPos = string.len(existingText .. openTag .. " ")
+	local endPos = startPos + string.len(placeholder)
+
+    box:SetText(existingText .. insertText)
+    box:SetFocus()
+
+    if box.HighlightText then
+        box:HighlightText(startPos, endPos)
+    end
 end
 
 function TurtleRP.OnAdminTabClick(id)
@@ -90,6 +137,17 @@ function TurtleRP.OnBottomTabAdminClick(bookType)
   end
 end
 
+function TurtleRP.ShouldShareLocation()
+  if TurtleRPSettings["share_location"] ~= "1" then
+    return false
+  end
+  if TurtleRPSettings["bgs"] == "on" and UnitIsPVP("player") then
+    return false
+  end
+
+  return true
+end
+
 function TurtleRP.showColorPicker(r, g, b, a, changedCallback)
  ColorPickerFrame:SetColorRGB(r, g, b);
  ColorPickerFrame.hasOpacity, ColorPickerFrame.opacity = (a ~= nil), a;
@@ -100,17 +158,15 @@ function TurtleRP.showColorPicker(r, g, b, a, changedCallback)
 end
 
 function TurtleRP.colorPickerCallback(restore)
-  local newR, newG, newB, newA;
+  local newR, newG, newB, newA
   if restore then
-    newR, newG, newB, newA = unpack(restore);
+    newR, newG, newB, newA = unpack(restore)
   else
-    newA, newR, newG, newB = OpacitySliderFrame:GetValue(), ColorPickerFrame:GetColorRGB();
+    newA, newR, newG, newB = OpacitySliderFrame:GetValue(), ColorPickerFrame:GetColorRGB()
   end
 
-  local r, g, b, a = newR, newG, newB, newA;
-  local hex = TurtleRP.rgb2hex(r, g, b)
+  local r, g, b, a = newR, newG, newB, newA
   TurtleRP_AdminSB_Content1_ClassColorButton:SetBackdropColor(r, g, b)
-  TurtleRPCharacterInfo['class_color'] = hex
 end
 
 -----
@@ -191,9 +247,25 @@ function TurtleRP.makeIconFrames()
     thisIconFrame:SetFont("Fonts\\FRIZQT__.ttf", 0)
     thisIconFrame:SetScript("OnClick", function()
       local thisIconIndex = thisIconFrame:GetText()
-      TurtleRPCharacterInfo[TurtleRP.currentIconSelector] = thisIconIndex
-      TurtleRP.save_general()
-      TurtleRP.save_at_a_glance()
+      if TurtleRP.currentIconSelector == "icon" then
+        TurtleRP_AdminSB_Content1_IconButton:SetBackdrop({
+          bgFile = "Interface\\Icons\\" .. TurtleRPIcons[tonumber(thisIconIndex)]
+        })
+      elseif TurtleRP.currentIconSelector == "atAGlance1Icon" then
+        TurtleRP_AdminSB_Content2_AAG1IconButton:SetBackdrop({
+          bgFile = "Interface\\Icons\\" .. TurtleRPIcons[tonumber(thisIconIndex)]
+        })
+      elseif TurtleRP.currentIconSelector == "atAGlance2Icon" then
+        TurtleRP_AdminSB_Content2_AAG2IconButton:SetBackdrop({
+          bgFile = "Interface\\Icons\\" .. TurtleRPIcons[tonumber(thisIconIndex)]
+        })
+      elseif TurtleRP.currentIconSelector == "atAGlance3Icon" then
+        TurtleRP_AdminSB_Content2_AAG3IconButton:SetBackdrop({
+          bgFile = "Interface\\Icons\\" .. TurtleRPIcons[tonumber(thisIconIndex)]
+        })
+      end
+      TurtleRP_IconSelector.selectedIconIndex = TurtleRP_IconSelector.selectedIconIndex or {}
+      TurtleRP_IconSelector.selectedIconIndex[TurtleRP.currentIconSelector] = thisIconIndex
       TurtleRP_IconSelector:Hide()
     end)
     IconFrames[i] = thisIconFrame
@@ -232,13 +304,14 @@ function TurtleRP.renderIcons(iconOffset)
       end
     end
   end
-  function TurtleRP.ToggleChatNames()
-    if TurtleRPSettings["chat_names"] == "1" then
-        TurtleRPSettings["chat_names"] = "0"
-        TurtleRP_AdminSB_Content5_ChatNamesButton:SetChecked(false)
-    else
-        TurtleRPSettings["chat_names"] = "1"
-        TurtleRP_AdminSB_Content5_ChatNamesButton:SetChecked(true)
-    end
 end
+
+function TurtleRP.ToggleChatNames()
+  if TurtleRPSettings["chat_names"] == "1" then
+    TurtleRPSettings["chat_names"] = "0"
+    TurtleRP_AdminSB_Content5_ChatNamesButton:SetChecked(false)
+  else
+    TurtleRPSettings["chat_names"] = "1"
+    TurtleRP_AdminSB_Content5_ChatNamesButton:SetChecked(true)
+  end
 end
