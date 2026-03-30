@@ -33,6 +33,7 @@ local timeOfLastSend = time()
 local rpRequestQueue = {}
 local rpRequestLookup = {}
 local rpSeenSpeakers = {}
+local versionWarningShown = {}
 TurtleRP.rpSeenSpeakers = rpSeenSpeakers
 
 local splitString
@@ -41,53 +42,40 @@ local splitString
 -- Interface interaction for communication and display
 -----
 function TurtleRP.mouseover_and_target_events()
-  splitString = TurtleRP.splitString -- Setting this here because TurtleRP.lua is loaded after this file
-  -- Player target
+  splitString = TurtleRP.splitString
+
   local TurtleRPTargetFrame = CreateFrame("Frame", "TurtleRPTargetFrame")
   TurtleRPTargetFrame:RegisterEvent("PLAYER_TARGET_CHANGED")
-  TurtleRPTargetFrame:SetScript("OnEvent",
-  	function()
-      if (IsInInstance() == "pvp" and TurtleRPSettings["bgs"] == "off") or IsInInstance() ~= "pvp" then
-        if (UnitIsPlayer("target")) then
-          if UnitName("target") == UnitName("player") then
-            TurtleRP.buildTargetFrame(UnitName("player"))
-          else
-            TurtleRP_Target:Hide()
-            TurtleRP.sendRequestForData("T", UnitName("target"))
-          end
-        else
-          TurtleRP_Target:Hide()
-        end
+  TurtleRPTargetFrame:SetScript("OnEvent", function()
+    if UnitIsPlayer("target") then
+      if UnitName("target") == UnitName("player") then
+        TurtleRP.buildTargetFrame(UnitName("player"))
+      else
+        TurtleRP_Target:Hide()
+        TurtleRP.sendRequestForData("T", UnitName("target"))
       end
-  	end
-  )
+    else
+      TurtleRP_Target:Hide()
+    end
+  end)
 
-  -- Other player mouseover
   local TurtleRPMouseoverFrame = CreateFrame("Frame", "TurtleRPMouseoverFrame")
   TurtleRPMouseoverFrame:RegisterEvent("UPDATE_MOUSEOVER_UNIT")
   TurtleRPMouseoverFrame:RegisterEvent("CURSOR_UPDATE")
   TurtleRPMouseoverFrame:SetScript("OnEvent", function()
-      -- Ensuring defaults are in place
-      if (IsInInstance() == "pvp" and TurtleRPSettings["bgs"] == "off") or IsInInstance() ~= "pvp" then
-        if UnitIsPlayer("mouseover") then
-          TurtleRP.sendRequestForData("M", UnitName("mouseover"))
-        end
-      end
+    if UnitIsPlayer("mouseover") then
+      TurtleRP.sendRequestForData("M", UnitName("mouseover"))
+    end
   end)
 
-  -- Self target mouseover frame (preview of self mouseover)
   TurtleRP.targetFrame:EnableMouse()
   local defaultTargetFrameFunction = TurtleRP.targetFrame:GetScript("OnEnter")
-  TurtleRP.targetFrame:SetScript("OnEnter",
-    function()
-      defaultTargetFrameFunction()
-      if (IsInInstance() == "pvp" and TurtleRPSettings["bgs"] == "off") or IsInInstance() ~= "pvp" then
-        if(UnitName("target") == UnitName("player")) then
-          TurtleRP.buildTooltip(UnitName("player"), "target")
-        end
-      end
+  TurtleRP.targetFrame:SetScript("OnEnter", function()
+    defaultTargetFrameFunction()
+    if UnitName("target") == UnitName("player") then
+      TurtleRP.buildTooltip(UnitName("player"), "target")
     end
-  )
+  end)
 end
 
 ----
@@ -371,23 +359,53 @@ function TurtleRP.recievePingInformation(playerName, msg)
         TurtleRPCharacters[playerName] = {}
     end
     local charData = TurtleRPCharacters[playerName]
-    charData['zone'] = zoneText
+    charData["zone"] = zoneText
     local strs = splitString(zoneText, "~", pingSplitTable)
     if table.getn(strs) < 3 then
         return
     end
     local zone = strs[1]
-    charData['zone'] = zone
-    charData['zoneX'] = strs[2]
-    charData['zoneY'] = strs[3]
-    if strs[5] ~= nil and strs[5] ~= "" then
-        charData['currently_ic'] = strs[5]
-    elseif charData['currently_ic'] == nil then
-        charData['currently_ic'] = "1"
+    charData["zone"] = zone
+    charData["zoneX"] = strs[2]
+    charData["zoneY"] = strs[3]
+    if strs[4] ~= nil and strs[4] ~= "" then
+        charData["version"] = strs[4]
+    else
+        charData["version"] = "unknown"
     end
+    if charData["version"] ~= "unknown" and TurtleRP.currentVersion ~= nil then
+		if TurtleRP.IsVersionOlder(charData["version"], TurtleRP.currentVersion) then
+			charData["outdated_version"] = "1"
+		else
+			charData["outdated_version"] = "0"
+		end
+		if TurtleRP.IsVersionOlder(TurtleRP.currentVersion, charData["version"]) then
+			if not versionWarningShown[charData["version"]] then
+				versionWarningShown[charData["version"]] = true
+				DEFAULT_CHAT_FRAME:AddMessage(
+					"|cffFF5555[TurtleRP]|r You are using an outdated version of TurtleRP. Update via Turtle Launcher!"
+				)
+			end
+		end
+	else
+		charData["outdated_version"] = "0"
+	end
+	if strs[5] ~= nil and strs[5] ~= "" then
+        charData["currently_ic"] = strs[5]
+    elseif charData["currently_ic"] == nil then
+        charData["currently_ic"] = "1"
+    end
+
+    if strs[6] ~= nil and strs[6] ~= "" then
+        charData["protocol_version"] = strs[6]
+    else
+        charData["protocol_version"] = "1"
+    end
+
     if not WorldMapFrame:IsVisible() then
         return
     end
+
     if zone == TurtleRP.GetZones(GetCurrentMapContinent())[GetCurrentMapZone()] then
         TurtleRP.show_player_locations()
     end
@@ -403,15 +421,20 @@ function TurtleRP.displayData(dataPrefix, playerName)
   if playerName == UnitName("target") and (dataPrefix == "D" or dataPrefix == "DR") then
     TurtleRP.buildDescription(playerName)
   end
-  -- Directory exceptions
-  if playerName == TurtleRP.currentlyViewedPlayer and (dataPrefix == "M" or dataPrefix == "MR") then
-    TurtleRP.buildGeneral(playerName)
-  end
-  if playerName == TurtleRP.currentlyViewedPlayer and (dataPrefix == "T" or dataPrefix == "TR") then
-    TurtleRP.buildGeneral(playerName)
+  if playerName == TurtleRP.currentlyViewedPlayer and TurtleRP_CharacterDetails:IsVisible() then
+    if TurtleRP.currentProfileTab == "general" and
+      (dataPrefix == "M" or dataPrefix == "MR" or dataPrefix == "T" or dataPrefix == "TR") then
+      TurtleRP.buildGeneral(playerName)
+    end
+    if TurtleRP.currentProfileTab == "description" and (dataPrefix == "D" or dataPrefix == "DR") then
+      TurtleRP.buildDescription(playerName)
+    end
+    if TurtleRP.currentProfileTab == "notes" and (dataPrefix == "M" or dataPrefix == "MR") then
+      TurtleRP.SetNameAndIcon(playerName)
+    end
   end
   if playerName == TurtleRP.showDescription and (dataPrefix == "D" or dataPrefix == "DR") then
-    TurtleRP.OpenProfile()
+    TurtleRP.OpenProfile("description")
     TurtleRP.buildDescription(playerName)
     TurtleRP_Target:Hide()
     TurtleRP.showDescription = nil
@@ -432,31 +455,34 @@ function TurtleRP.splitByChunk(text, chunkSize)
 end
 
 -- Have to keep stupid 1.1.0 code because I made a boo boo
--- bratmage // Modified to fix Ironforge coordinate bug. hopefully no new boo boos.
+-- //bratmage / i have no idea what this 1.1.0 note means but im keeping it forever
 function TurtleRP.pingWithLocationAndVersion(message)
   local oldContinent, oldZone = GetCurrentMapContinent(), GetCurrentMapZone()
   SetMapToCurrentZone()
   local zoneX, zoneY = GetPlayerMapPosition("player")
   local zoneName = GetRealZoneText()
   local icStatus = TurtleRPCharacterInfo["currently_ic"] or "1"
+  local addonVersion = TurtleRP.currentVersion or "unknown"
+  local protocolVersion = "2"
 
   if oldContinent and oldContinent > 0 then
     SetMapZoom(oldContinent, oldZone or 0)
   end
-
   message = message .. zoneName
-  if TurtleRPSettings['share_location'] == "1" then
+  local shouldShareLocation = TurtleRPSettings['share_location'] == "1"
+
+  if shouldShareLocation then
     if (zoneX == 0 and zoneY == 0) then
       if zoneName == "Ironforge" or zoneName == "Stormwind City" or zoneName == "Darnassus" or zoneName == "Orgrimmar" or zoneName == "Thunder Bluff" or zoneName == "Undercity" or zoneName == "Alah'thalas" then
-        message = message .. "~0.5~0.5~1.1.0~" .. icStatus
+        message = message .. "~0.5~0.5~" .. addonVersion .. "~" .. icStatus .. "~" .. protocolVersion
       else
-        message = message .. "~false~false~1.1.0~" .. icStatus
+        message = message .. "~false~false~" .. addonVersion .. "~" .. icStatus .. "~" .. protocolVersion
       end
     else
-      message = message .. "~" .. math.floor(zoneX * 10000)/10000 .. "~" .. math.floor(zoneY * 10000)/10000 .. "~1.1.0~" .. icStatus
+      message = message .. "~" .. math.floor(zoneX * 10000)/10000 .. "~" .. math.floor(zoneY * 10000)/10000 .. "~" .. addonVersion .. "~" .. icStatus .. "~" .. protocolVersion
     end
   else
-    message = message .. "~false~false~1.1.0~" .. icStatus
+    message = message .. "~false~false~" .. addonVersion .. "~" .. icStatus .. "~" .. protocolVersion
   end
 
   TurtleRP.ttrpChatSend(message)
