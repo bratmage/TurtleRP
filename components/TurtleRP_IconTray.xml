@@ -253,7 +253,7 @@
           </OnClick>
           <OnEnter>
             GameTooltip:SetOwner(this, "ANCHOR_TOPRIGHT")
-            GameTooltip:SetText("Open Main Window")
+            GameTooltip:SetText("Profile &amp; Settings")
             GameTooltip:Show()
           </OnEnter>
           <OnLeave>
@@ -462,7 +462,7 @@
             if ShowingCloak() then
               GameTooltip:SetText("Toggle NPC and Player Names")
             else
-              GameTooltip:SetText("Show Cloak")
+              GameTooltip:SetText("Toggle NPC and Player Names")
             end
             GameTooltip:Show()
           </OnEnter>
