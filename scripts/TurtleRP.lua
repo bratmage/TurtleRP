@@ -48,6 +48,8 @@ TurtleRP.searchTerm = ""
 TurtleRP.adminSuppressClosePrompt = nil
 TurtleRP.adminUnsavedPopupPending = nil
 TurtleRP.adminStateSnapshot = nil
+TurtleRP.adminPendingTabSwitch = nil
+TurtleRP.adminPendingBottomTabSwitch = nil
 TurtleRP.previewCharacterInfo = nil
 TurtleRP.previewSource = nil
 -- Accounting for PFUI, Go Shagu Go
@@ -84,10 +86,13 @@ function TurtleRP:OnEvent()
     TurtleRPCharacterInfoTemplate["nsfw"] = "0"
     TurtleRPCharacterInfoTemplate["icon"] = ""
 	TurtleRPCharacterInfoTemplate["title"] = ""
+    local localizedClass, classToken = UnitClass("player")
+
     TurtleRPCharacterInfoTemplate["full_name"] = UnitName("player")
     TurtleRPCharacterInfoTemplate["race"] = UnitRace("player")
-    TurtleRPCharacterInfoTemplate["class"] = UnitClass("player")
-    TurtleRPCharacterInfoTemplate["class_color"] = TurtleRPClassData[UnitClass("player")][4]
+    TurtleRPCharacterInfoTemplate["class"] = localizedClass
+    TurtleRPCharacterInfoTemplate["class_token"] = classToken
+    TurtleRPCharacterInfoTemplate["class_color"] = TurtleRPClassData[localizedClass][4]
     TurtleRPCharacterInfoTemplate["ic_info"] = ""
     TurtleRPCharacterInfoTemplate["ooc_info"] = ""
     TurtleRPCharacterInfoTemplate["ic_pronouns"] = ""
@@ -117,6 +122,8 @@ function TurtleRP:OnEvent()
     TurtleRPCharacterInfoTemplate["description"] = ""
 
     TurtleRPCharacterInfoTemplate["character_notes"] = {}
+    TurtleRPCharacterInfoTemplate["character_short_notes"] = {}
+    TurtleRPCharacterInfoTemplate["character_disable_rp_color"] = {}
 
     local TurtleRPSettingsTemplate = {}
     TurtleRPSettingsTemplate["bgs"] = "off"
@@ -127,6 +134,7 @@ function TurtleRP:OnEvent()
     TurtleRPSettingsTemplate["share_location"] = "0"
     TurtleRPSettingsTemplate["show_nsfw"] = "0"
 	TurtleRPSettingsTemplate["chat_names"] = "1"
+	TurtleRPSettingsTemplate["chat_colors"] = "1"
 	TurtleRPSettingsTemplate["auto_emote_name"] = "1"
     TurtleRPSettingsTemplate["selected_profile"] = "0"
 
@@ -175,10 +183,18 @@ function TurtleRP:OnEvent()
     end
     -- For adding additional fields after plugin is in use
     if TurtleRPCharacterInfo ~= nil then
-      for i, field in pairs(TurtleRPCharacterInfoTemplate) do
-        if TurtleRPCharacterInfo[i] == nil then
-          TurtleRPCharacterInfo[i] = TurtleRPCharacterInfoTemplate[i]
-        end
+      if TurtleRPCharacterInfo["class_token"] == nil or TurtleRPCharacterInfo["class_token"] == "" then
+        local _, classToken = UnitClass("player")
+        TurtleRPCharacterInfo["class_token"] = classToken
+      end
+      if TurtleRPCharacterInfo["character_notes"] == nil then
+        TurtleRPCharacterInfo["character_notes"] = {}
+      end
+      if TurtleRPCharacterInfo["character_short_notes"] == nil then
+        TurtleRPCharacterInfo["character_short_notes"] = {}
+      end
+      if TurtleRPCharacterInfo["character_disable_rp_color"] == nil then
+        TurtleRPCharacterInfo["character_disable_rp_color"] = {}
       end
       TurtleRPCharacters[UnitName("player")] = TurtleRPCharacterInfo
       TurtleRPPlayerProfiles[TurtleRPSettings["selected_profile"]] = TurtleRPCharacterInfo
@@ -200,6 +216,7 @@ function TurtleRP:OnEvent()
 
     TurtleRP.populate_interface_user_data()
 	TurtleRP_AdminSB_Content5_ChatNamesButton:SetChecked(TurtleRPSettings["chat_names"] == "1" and true or false)
+	TurtleRP_AdminSB_Content5_ChatColorsButton:SetChecked(TurtleRPSettings["chat_colors"] == "1" and true or false)
 
     TurtleRP.tooltip_events()
     TurtleRP.mouseover_and_target_events()
@@ -214,8 +231,28 @@ function TurtleRP:OnEvent()
       button1 = "Continue Editing",
       button2 = "Discard Changes",
       OnAccept = function()
+        TurtleRP.adminPendingTabSwitch = nil
+        TurtleRP.adminPendingBottomTabSwitch = nil
       end,
       OnCancel = function()
+        if TurtleRP.adminPendingTabSwitch ~= nil then
+          local pendingTab = TurtleRP.adminPendingTabSwitch
+          TurtleRP.adminPendingTabSwitch = nil
+          TurtleRP.adminPendingBottomTabSwitch = nil
+          TurtleRP.populate_interface_user_data()
+          TurtleRP.RefreshAdminStateSnapshot()
+          TurtleRP.ApplyAdminTabClick(pendingTab)
+          return
+        end
+        if TurtleRP.adminPendingBottomTabSwitch ~= nil then
+          local pendingBottomTab = TurtleRP.adminPendingBottomTabSwitch
+          TurtleRP.adminPendingBottomTabSwitch = nil
+          TurtleRP.adminPendingTabSwitch = nil
+          TurtleRP.populate_interface_user_data()
+          TurtleRP.RefreshAdminStateSnapshot()
+          TurtleRP.ApplyBottomTabAdminClick(pendingBottomTab)
+          return
+        end
         TurtleRP.ForceCloseAdmin()
       end,
       timeout = 0,
@@ -369,6 +406,18 @@ function TurtleRP.populate_interface_user_data()
 
   if TurtleRPSettings["show_nsfw"] == "1" then
     TurtleRP_AdminSB_Content5_ShowNSFWButton:SetChecked(true)
+  else
+    TurtleRP_AdminSB_Content5_ShowNSFWButton:SetChecked(false)
+  end
+  if TurtleRPSettings["chat_names"] == "1" then
+    TurtleRP_AdminSB_Content5_ChatNamesButton:SetChecked(true)
+  else
+    TurtleRP_AdminSB_Content5_ChatNamesButton:SetChecked(false)
+  end
+  if TurtleRPSettings["chat_colors"] == "1" then
+    TurtleRP_AdminSB_Content5_ChatColorsButton:SetChecked(true)
+  else
+    TurtleRP_AdminSB_Content5_ChatColorsButton:SetChecked(false)
   end
   -- Setup Profile Dropdown
   TurtleRP.SetProfileDropdown()
@@ -618,6 +667,8 @@ function TurtleRP.ForceCloseAdmin()
   TurtleRP.previewSource = nil
   TurtleRP_IconSelector.selectedIconIndex = {}
   TurtleRP.adminStateSnapshot = nil
+  TurtleRP.adminPendingTabSwitch = nil
+  TurtleRP.adminPendingBottomTabSwitch = nil
 
   HideUIPanel(TurtleRP_AdminSB)
   TurtleRP.populate_interface_user_data()
@@ -632,6 +683,30 @@ function TurtleRP.RequestCloseAdmin()
   else
     TurtleRP.ForceCloseAdmin()
   end
+end
+
+function TurtleRP.RequestAdminTabSwitch(tabType, value)
+  TurtleRP.ClearAdminFocus()
+
+  if not TurtleRP.HasUnsavedAdminChanges() then
+    if tabType == "main" then
+      TurtleRP.ApplyAdminTabClick(value)
+    elseif tabType == "bottom" then
+      TurtleRP.ApplyBottomTabAdminClick(value)
+    end
+    return
+  end
+
+  TurtleRP.adminPendingTabSwitch = nil
+  TurtleRP.adminPendingBottomTabSwitch = nil
+
+  if tabType == "main" then
+    TurtleRP.adminPendingTabSwitch = value
+  elseif tabType == "bottom" then
+    TurtleRP.adminPendingBottomTabSwitch = value
+  end
+
+  StaticPopup_Show("TTRP_ADMIN_UNSAVED")
 end
 
 function TurtleRP.ShowAdminUnsavedPopupDelayed()
@@ -717,6 +792,8 @@ function TurtleRP.save_general()
   local class = TurtleRP_AdminSB_Content1_ClassInput:GetText()
   TurtleRP_AdminSB_Content1_ClassInput:ClearFocus()
   TurtleRPCharacterInfo["class"] = TurtleRP.validateBeforeSaving(class)
+  local _, classToken = UnitClass("player")
+  TurtleRPCharacterInfo["class_token"] = classToken
   local title = TurtleRP_AdminSB_Content1_TitleInput:GetText()
   TurtleRP_AdminSB_Content1_TitleInput:ClearFocus()
   TurtleRPCharacterInfo["title"] = TurtleRP.validateBeforeSaving(title)
@@ -1031,28 +1108,194 @@ function TurtleRP.cleanDirectory()
     end
   end
 end
+-- allowing for blizzard raid colors based on rp colors setting being off
+function TurtleRP.GetClassTokenFromCharacter(character)
+    if not character then
+        return nil
+    end
+    if character["class_token"] and character["class_token"] ~= "" then
+        local token = string.upper(character["class_token"])
+        if RAID_CLASS_COLORS and RAID_CLASS_COLORS[token] then
+            return token
+        end
+    end
+
+    if character["class"] and character["class"] ~= "" then
+        local classValue = string.upper(character["class"])
+        if RAID_CLASS_COLORS and RAID_CLASS_COLORS[classValue] then
+            return classValue
+        end
+        if LOCALIZED_CLASS_NAMES_MALE then
+            for token, localized in pairs(LOCALIZED_CLASS_NAMES_MALE) do
+                if localized == character["class"] then
+                    return token
+                end
+            end
+        end
+        if LOCALIZED_CLASS_NAMES_FEMALE then
+            for token, localized in pairs(LOCALIZED_CLASS_NAMES_FEMALE) do
+                if localized == character["class"] then
+                    return token
+                end
+            end
+        end
+    end
+	
+    if character["class_color"] and character["class_color"] ~= "" and TurtleRPClassData then
+        local wanted = string.lower(character["class_color"])
+        for localizedClass, classData in pairs(TurtleRPClassData) do
+            if classData and classData[4] and string.lower(classData[4]) == wanted then
+                local token = string.upper(localizedClass)
+                if RAID_CLASS_COLORS and RAID_CLASS_COLORS[token] then
+                    return token
+                end
+                if LOCALIZED_CLASS_NAMES_MALE then
+                    for raidToken, localized in pairs(LOCALIZED_CLASS_NAMES_MALE) do
+                        if localized == localizedClass then
+                            return raidToken
+                        end
+                    end
+                end
+                if LOCALIZED_CLASS_NAMES_FEMALE then
+                    for raidToken, localized in pairs(LOCALIZED_CLASS_NAMES_FEMALE) do
+                        if localized == localizedClass then
+                            return raidToken
+                        end
+                    end
+                end
+            end
+        end
+    end
+    return nil
+end
+
+function TurtleRP.GetRaidClassColorHex(character)
+    local classToken = TurtleRP.GetClassTokenFromCharacter(character)
+    if not classToken or not RAID_CLASS_COLORS or not RAID_CLASS_COLORS[classToken] then
+        return nil
+    end
+    local color = RAID_CLASS_COLORS[classToken]
+    return string.format("%02x%02x%02x",
+        math.floor(color.r * 255),
+        math.floor(color.g * 255),
+        math.floor(color.b * 255))
+end
+
+function TurtleRP.IsRPColorDisabledForPlayer(playerName)
+    if not playerName or not TurtleRPCharacterInfo then
+        return false
+    end
+    if not TurtleRPCharacterInfo["character_disable_rp_color"] then
+        TurtleRPCharacterInfo["character_disable_rp_color"] = {}
+    end
+    return TurtleRPCharacterInfo["character_disable_rp_color"][playerName] == "1"
+end
+
+function TurtleRP.ToggleRPColorDisabledForPlayer(playerName)
+    if not playerName or playerName == "" or playerName == UnitName("player") then
+        return
+    end
+    if not TurtleRPCharacterInfo["character_disable_rp_color"] then
+        TurtleRPCharacterInfo["character_disable_rp_color"] = {}
+    end
+
+    if TurtleRPCharacterInfo["character_disable_rp_color"][playerName] == "1" then
+        TurtleRPCharacterInfo["character_disable_rp_color"][playerName] = "0"
+    else
+        TurtleRPCharacterInfo["character_disable_rp_color"][playerName] = "1"
+    end
+
+    if TurtleRP_CharacterDetails and TurtleRP_CharacterDetails:IsShown() then
+        if TurtleRP.currentProfileTab == "notes" then
+            TurtleRP.buildNotes(playerName)
+        elseif TurtleRP.currentProfileTab == "general" then
+            TurtleRP.buildGeneral(playerName)
+        end
+    end
+end
+
+function TurtleRP.GetEffectiveClassColorHex(playerName, character)
+    character = character or (TurtleRPCharacters and playerName and TurtleRPCharacters[playerName]) or nil
+    if not character then
+        return nil
+    end
+
+    if playerName and TurtleRP.IsRPColorDisabledForPlayer(playerName) then
+        return TurtleRP.GetRaidClassColorHex(character)
+    end
+
+    if character["class_color"] and character["class_color"] ~= "" then
+        return character["class_color"]
+    end
+
+    return TurtleRP.GetRaidClassColorHex(character)
+end
 -- replacing the IGN with turtle rp name, using the full_name variable
+function TurtleRP.GetChatDisplayName(playerName, displayedName, includeTitle)
+    local fallbackName = displayedName or playerName or ""
+    local showNames = TurtleRPSettings and TurtleRPSettings["chat_names"] == "1"
+    local showColors = TurtleRPSettings and TurtleRPSettings["chat_colors"] == "1"
+    local character = TurtleRPCharacters and playerName and TurtleRPCharacters[playerName] or nil
+
+    local fallbackStripped = string.gsub(fallbackName, "|[cC][fF][fF]%x%x%x%x%x%x", "")
+    fallbackStripped = string.gsub(fallbackStripped, "|[rR]", "")
+    if not showNames then
+        local effectiveColor = TurtleRP.GetEffectiveClassColorHex(playerName, character)
+        if showColors and effectiveColor and effectiveColor ~= "" then
+            return "|cff" .. effectiveColor .. fallbackStripped .. "|r"
+        end
+        return fallbackName
+    end
+    if not character or not character.full_name or character.full_name == "" then
+        local effectiveColor = TurtleRP.GetEffectiveClassColorHex(playerName, character)
+        if showColors and effectiveColor and effectiveColor ~= "" then
+            return "|cff" .. effectiveColor .. fallbackStripped .. "|r"
+        end
+        return fallbackName
+    end
+    local baseName = character.full_name
+    local rawName = baseName
+    if includeTitle and character.title and character.title ~= "" then
+        rawName = character.title .. " " .. rawName
+    end
+    local strippedName = string.gsub(rawName, "|[cC][fF][fF]%x%x%x%x%x%x", "")
+    strippedName = string.gsub(strippedName, "|[rR]", "")
+    if showColors then
+        if string.find(baseName, "|[cC][fF][fF]%x%x%x%x%x%x") and not TurtleRP.IsRPColorDisabledForPlayer(playerName) then
+            return rawName
+        end
+        local effectiveColor = TurtleRP.GetEffectiveClassColorHex(playerName, character)
+        if effectiveColor and effectiveColor ~= "" then
+            return "|cff" .. effectiveColor .. strippedName .. "|r"
+        end
+        return strippedName
+    end
+    local raidColorHex = TurtleRP.GetRaidClassColorHex(character)
+    if raidColorHex then
+        return "|cff" .. raidColorHex .. strippedName .. "|r"
+    end
+    return strippedName
+end
+
 function TurtleRP.ReplaceNamesInChat(text)
-    if not text or not TurtleRPCharacters then return text end
-    if TurtleRPSettings["chat_names"] ~= "1" then return text end
+    if not text or not TurtleRPCharacters then
+        return text
+    end
+    local showNames = TurtleRPSettings["chat_names"] == "1"
+    local showColors = TurtleRPSettings["chat_colors"] == "1"
+    if not showNames and not showColors then
+        return text
+    end
     text = string.gsub(text, "(|Hplayer:([^:|]+)[^|]*|h%[)([^%]]+)(%]|h)", function(prefix, rawName, displayedName, suffix)
         if strlower(rawName) == "usertag" then
             return prefix .. "" .. suffix
         end
-        local character = TurtleRPCharacters[rawName]
-        if character and character.full_name and character.full_name ~= "" then
-            local nameToUse = character.full_name
-            local hasColor = string.find(nameToUse, "|[cC][fF][fF]")
-            if not hasColor and character.class_color and character.class_color ~= "" then
-                return prefix .. "|cff" .. character.class_color .. nameToUse .. "|r" .. suffix
-            else
-                return prefix .. nameToUse .. suffix
-            end
-        end
-        return prefix .. displayedName .. suffix
+        local finalName = TurtleRP.GetChatDisplayName(rawName, displayedName, false)
+        return prefix .. finalName .. suffix
     end)
     return text
 end
+
 function TurtleRP.HookChatFrames()
     for i = 1, 7 do
         local frame = getglobal("ChatFrame" .. i)
