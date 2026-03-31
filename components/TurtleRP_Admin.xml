@@ -2191,7 +2191,7 @@
 						  <FontHeight><AbsValue val="10" /></FontHeight>
 						  <Color r="0" g="0" b="0" />
 						</FontString>
-			<!-- Colored Names in Chat text  -->
+            <!-- RP Names in Chat text -->
             <FontString name="$parent_ChatNamesText" inherits="OVERLAY" font="Fonts\FRIZQT__.ttf" text="RP Names in Chat">
               <Anchors>
                 <Anchor point="TOPLEFT" relativeTo="$parent_ShowNSFWText" relativePoint="BOTTOMLEFT">
@@ -2203,10 +2203,22 @@
               <FontHeight><AbsValue val="10" /></FontHeight>
               <Color r="0" g="0" b="0" />
             </FontString>
+            <!-- RP Colors in Chat text -->
+            <FontString name="$parent_ChatColorsText" inherits="OVERLAY" font="Fonts\FRIZQT__.ttf" text="RP Colors in Chat">
+              <Anchors>
+                <Anchor point="TOPLEFT" relativeTo="$parent_ChatNamesText" relativePoint="BOTTOMLEFT">
+                  <Offset>
+                    <AbsDimension x="0" y="-10" />
+                  </Offset>
+                </Anchor>
+              </Anchors>
+              <FontHeight><AbsValue val="10" /></FontHeight>
+              <Color r="0" g="0" b="0" />
+            </FontString>
 			<!-- Select Profile text -->
             <FontString name="$parent_SelectProfileText" inherits="OVERLAY" font="Fonts\FRIZQT__.ttf" text="Select Active Profile">
               <Anchors>
-                <Anchor point="TOPLEFT" relativeTo="$parent_ChatNamesText" relativePoint="BOTTOMLEFT">
+                <Anchor point="TOPLEFT" relativeTo="$parent_ChatColorsText" relativePoint="BOTTOMLEFT">
                   <Offset>
                     <AbsDimension x="0" y="-10" />
                   </Offset>
@@ -2404,7 +2416,28 @@
 					end
 				  </OnClick>
 				</Scripts>
-			  </CheckButton>
+			</CheckButton>
+			<CheckButton name="$parent_ChatColorsButton" inherits="UICheckButtonTemplate">
+				<Size>
+				  <AbsDimension x="25" y="25" />
+				</Size>
+				<Anchors>
+				  <Anchor point="RIGHT" relativeTo="$parent_ChatNamesButton" relativePoint="RIGHT">
+					<Offset>
+					  <AbsDimension x="0" y="-20"/>
+					</Offset>
+				  </Anchor>
+				</Anchors>
+				<Scripts>
+				  <OnClick>
+					if TurtleRPSettings["chat_colors"] == "0" then
+					  TurtleRPSettings["chat_colors"] = "1"
+					else
+					  TurtleRPSettings["chat_colors"] = "0"
+					end
+				  </OnClick>
+				</Scripts>
+			</CheckButton>
 			<Frame name="$parent_ProfileDropdown" inherits="UIDropDownMenuTemplate" enableMouse="true">
 			  <Size>
 				<AbsDimension x="120" y="20" />
@@ -2506,7 +2539,7 @@
             </FontString>
             <!-- About Text -->
             <FontString name="$parent_AboutText" inherits="OVERLAY" font="Fonts\FRIZQT__.ttf" justifyV="top" justifyH="left"
-              text="TurtleRP was developed by Drixi, with collaboration and help from Ashkir. If we can get support, many more features are planned:  &#xA;&#xA;- Guild functionality&#xA;- Additional description formatting&#xA;- Map locator&#xA;&#xA;Get in touch and find out more here: |ccf0f1bbdhttps://tempranova.github.io/turtlerp/|ccf000000, or join us on Discord at |ccf0f1bbdhttps://discord.gg/Z5w9DqDE96">
+              text="Thank you for your existence. I truly hope you have an excellent day.&#xA;&#xA;TurtleRP is presently maintained by Takoy (bratmage). Contact me on discord @takoy or on github. &#xA;&#xA;It was originally developed by Drixi, with collaboration and help from Ashkir.&#xA;&#xA;Other thanks to those who have helped over the years- OldManAlpha, Zara, Vee, and luskanek.">
               <Size>
                 <AbsDimension x="310" y="150" />
               </Size>
@@ -2527,7 +2560,7 @@
               <Anchors>
                 <Anchor point="TOPLEFT">
                   <Offset>
-                    <AbsDimension x="0" y="-160" />
+                    <AbsDimension x="0" y="-170" />
                   </Offset>
                 </Anchor>
               </Anchors>
@@ -2554,7 +2587,7 @@
               <Color r="0" g="0" b="0" />
             </FontString>
             <!-- Issues Text -->
-            <FontString name="$parent_IssuesText" inherits="OVERLAY" font="Fonts\FRIZQT__.ttf" justifyV="top" justifyH="left" text="Not seeing profiles? Make sure you are in the TTRP channel by pressing 'Rejoin / Reload' below.&#xA;&#xA;Due to chat restrictions, on the Turtle WoW server players under level 5 cannot see other profiles and others cannot see theirs. Level up already!">
+            <FontString name="$parent_IssuesText" inherits="OVERLAY" font="Fonts\FRIZQT__.ttf" justifyV="top" justifyH="left" text="Not seeing profiles? Make sure you are in the TTRP channel by pressing 'Rejoin / Reload' below.&#xA;&#xA;Due to chat restrictions, on the Turtle WoW server players under level 10 cannot see other profiles and others cannot see theirs. Level up already!">
               <Size>
                 <AbsDimension x="310" y="100" />
               </Size>
