@@ -274,7 +274,7 @@ function TurtleRP.buildDataStringToSend(dataPrefix)
 end
 
 local dataKeys = {
-    ["M"] = {"keyM", "icon", "full_name", "race", "class", "class_color", "ooc_info", "ic_info", "currently_ic", "ooc_pronouns", "ic_pronouns", "nsfw", "title"},
+    ["M"] = {"keyM", "icon", "full_name", "race", "class", "class_color", "ooc_info", "ic_info", "currently_ic", "ooc_pronouns", "ic_pronouns", "nsfw", "title", "class_token"},
     ["T"] = {"keyT", "atAGlance1", "atAGlance1Title", "atAGlance1Icon", "atAGlance2", "atAGlance2Title", "atAGlance2Icon", "atAGlance3", "atAGlance3Title", "atAGlance3Icon", "experience", "walkups", "injury", "romance", "death"},
     ["D"] = {"keyD", "description"}
 }
