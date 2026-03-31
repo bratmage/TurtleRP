@@ -781,6 +781,51 @@
               </OnClick>
             </Scripts>
           </Button>
+          <!-- Disable RP color for individual profile -->
+          <CheckButton name="$parent_DisableRPColorButton" inherits="UICheckButtonTemplate" hidden="true">
+            <Size>
+              <AbsDimension x="25" y="25" />
+            </Size>
+            <Anchors>
+              <Anchor point="RIGHT" relativeTo="$parent_SaveButton" relativePoint="LEFT">
+                <Offset>
+                  <AbsDimension x="-210" y="0"/>
+                </Offset>
+              </Anchor>
+            </Anchors>
+            <Scripts>
+              <OnClick>
+                TurtleRP.ToggleRPColorDisabledForPlayer(TurtleRP.currentlyViewedPlayer)
+              </OnClick>
+            </Scripts>
+          </CheckButton>
+
+          <Frame name="$parent_DisableRPColorText" hidden="true">
+            <Size>
+              <AbsDimension x="110" y="25" />
+            </Size>
+            <Anchors>
+              <Anchor point="LEFT" relativeTo="$parent_DisableRPColorButton" relativePoint="RIGHT">
+                <Offset>
+                  <AbsDimension x="2" y="0"/>
+                </Offset>
+              </Anchor>
+            </Anchors>
+            <Layers>
+              <Layer level="OVERLAY">
+                <FontString inherits="GameFontNormalSmall" text="Disable RP Color">
+                  <Anchors>
+                    <Anchor point="LEFT">
+                      <Offset>
+                        <AbsDimension x="0" y="0"/>
+                      </Offset>
+                    </Anchor>
+                  </Anchors>
+                  <Color r="1" g="1" b="1" a="1"/>
+                </FontString>
+              </Layer>
+            </Layers>
+          </Frame>
           <!-- Short private note title -->
           <Frame name="$parent_ShortNoteBox">
             <Size>
