@@ -100,8 +100,14 @@
 				  info.func = function()
 					  TurtleRP_ChatBox_ChatTypeDropdown_Text:SetText(itemName)
 					  TurtleRP.currentChatType = itemName
+					if not TurtleRPSettings then
+					  TurtleRPSettings = {}
+					end
+					if TurtleRPSettings["auto_emote_name"] == nil then
+					  TurtleRPSettings["auto_emote_name"] = "1"
+					end
 
-					 if itemName == "Emote" then
+					if itemName == "Emote" then
 					  TurtleRP_ChatBox_AutoEmoteNameButton:SetChecked(TurtleRPSettings["auto_emote_name"] == "1" and true or false)
 					  TurtleRP_ChatBox_AutoEmoteNameButton:Show()
 					else
@@ -214,15 +220,27 @@
         </Layers>
 			<Scripts>
 			  <OnLoad>
+				if not TurtleRPSettings then
+				  TurtleRPSettings = {}
+				end
 				if TurtleRPSettings["auto_emote_name"] == nil then
 				  TurtleRPSettings["auto_emote_name"] = "1"
 				end
 				this:SetChecked(TurtleRPSettings["auto_emote_name"] == "1" and true or false)
 			  </OnLoad>
 			  <OnClick>
+				if not TurtleRPSettings then
+				  TurtleRPSettings = {}
+				end
 				TurtleRPSettings["auto_emote_name"] = this:GetChecked() and "1" or "0"
 			  </OnClick>
 			  <OnShow>
+				if not TurtleRPSettings then
+				  TurtleRPSettings = {}
+				end
+				if TurtleRPSettings["auto_emote_name"] == nil then
+				  TurtleRPSettings["auto_emote_name"] = "1"
+				end
 				this:SetChecked(TurtleRPSettings["auto_emote_name"] == "1" and true or false)
 			  </OnShow>
 			</Scripts>
@@ -243,7 +261,11 @@
             if TurtleRP.currentChatType ~= nil then
               local chatType = TurtleRP_ChatBox_ChatTypeDropdown_Text:GetText()
               local messageText = TurtleRP_ChatBox_TextScrollBox_TextInput:GetText()
-              TurtleRP.SendLongFormMessage(chatType, messageText)
+              if TurtleRP and TurtleRP.SendLongFormMessage then
+                TurtleRP.SendLongFormMessage(chatType, messageText)
+              else
+                _ERRORMESSAGE('TurtleRP chat functions did not load correctly. Reload UI.')
+              end
             else
               _ERRORMESSAGE('Please select a chat type for your message.')
             end
@@ -255,6 +277,13 @@
     </Frames>
     <Scripts>
 		<OnShow>
+		  if not TurtleRPSettings then
+			TurtleRPSettings = {}
+		  end
+		  if TurtleRPSettings["auto_emote_name"] == nil then
+			TurtleRPSettings["auto_emote_name"] = "1"
+		  end
+
 		  TurtleRP.currentChatType = nil
 		  TurtleRP_ChatBox_ChatTypeDropdown_Text:SetText("Chat Type")
 		  TurtleRP_ChatBox_AutoEmoteNameButton:SetChecked(TurtleRPSettings["auto_emote_name"] == "1" and true or false)
