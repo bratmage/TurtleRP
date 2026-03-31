@@ -34,8 +34,6 @@ Recommend reading the patch notes for 1.3.2 below for the exciting stuff. This i
 
 
 **Known Issues**
-- Switching tabs with unsaved information does not "hold" that information. Save button is per page only. No unsaved warning popup when changing tabs.
-- /e sends the Title and Name regardless of your setting to enable or disable RP names.
 - Very niche case: If you previously used both old note systems on yourself, in admin and in the saved profile, it may appear that the saved profile one has "overwritten" the old notes. The old notes are still saved in your profile lua. I have a data migration set up to sync everything, but if both fields were filled, it does not "replace" one, only changes which is displayed. You may want to manually clean it up if you really care.
 
 
