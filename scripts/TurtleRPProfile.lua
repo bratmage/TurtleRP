@@ -106,8 +106,12 @@ function TurtleRP.buildGeneral(playerName)
   end
   local raceClassString = ""
   if characterInfo["keyM"] ~= nil then
-    local classColor = characterInfo['class_color'] and characterInfo['class_color'] or TurtleRPClassData[characterInfo["class"]][4]
-    raceClassString = characterInfo["race"] .. "|cff" .. classColor .. " " .. characterInfo["class"]
+    local classColor = TurtleRP.GetEffectiveClassColorHex(playerName, characterInfo)
+    if classColor and classColor ~= "" then
+      raceClassString = characterInfo["race"] .. "|cff" .. classColor .. " " .. characterInfo["class"]
+    else
+      raceClassString = characterInfo["race"] .. " " .. characterInfo["class"]
+    end
   end
 
   local lastFrame = nil
@@ -244,6 +248,8 @@ function TurtleRP.buildNotes(playerName)
     TurtleRP_CharacterDetails_Notes_ShortNoteBox_Input:SetText(
       TurtleRPCharacterInfo["short_note"] or ""
     )
+    TurtleRP_CharacterDetails_Notes_DisableRPColorButton:Hide()
+    TurtleRP_CharacterDetails_Notes_DisableRPColorText:Hide()
   else
     if TurtleRPCharacterInfo["character_notes"][TurtleRP.currentlyViewedPlayer] ~= nil then
       TurtleRP_CharacterDetails_Notes_NotesScrollBox_NotesContent_NotesInput:SetText(
@@ -260,6 +266,11 @@ function TurtleRP.buildNotes(playerName)
     else
       TurtleRP_CharacterDetails_Notes_ShortNoteBox_Input:SetText("")
     end
+    TurtleRP_CharacterDetails_Notes_DisableRPColorButton:SetChecked(
+      TurtleRP.IsRPColorDisabledForPlayer(playerName)
+    )
+    TurtleRP_CharacterDetails_Notes_DisableRPColorButton:Show()
+    TurtleRP_CharacterDetails_Notes_DisableRPColorText:Show()
   end
   TurtleRP_CharacterDetails_Notes:Show()
   TurtleRP_CharacterDetails_FrameTabButton1:SetNormalTexture("Interface\\Spellbook\\UI-Spellbook-Tab-Unselected")
