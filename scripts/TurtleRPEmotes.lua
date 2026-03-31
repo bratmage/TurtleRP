@@ -45,13 +45,11 @@ function TurtleRP.emote_events()
   local beginningQuoteFlag = {}
 
   local oldChatFrame_OnEvent = ChatFrame_OnEvent
-
   function ChatFrame_OnEvent(event)
     local savedEvent = event
 
     if ( strsub(event, 1, 8) == "CHAT_MSG" ) then
       local type = strsub(event, 10)
-
       if ( type == "SYSTEM") then
         if arg1 == "You are now AFK: Away from Keyboard" then
           TurtleRP.disableMessageSending = true
@@ -60,12 +58,10 @@ function TurtleRP.emote_events()
           TurtleRP.disableMessageSending = nil
         end
       end
-
       if ( type == "EMOTE" ) then
         if beginningQuoteFlag[this:GetID()] == nil then
           beginningQuoteFlag[this:GetID()] = 0
         end
-
         if TurtleRP.sendingLongForm ~= nil then
           if TurtleLastSender[this:GetID()] and TurtleLastSender[this:GetID()] == arg2 then
             if string.find(TurtleLastEmote[this:GetID()], '"') then
@@ -84,59 +80,42 @@ function TurtleRP.emote_events()
 
         TurtleLastEmote[this:GetID()] = arg1
         TurtleLastSender[this:GetID()] = arg2
-
         savedEvent = "TURTLE_TAKEOVER"
 
         local nameString = arg2
         local splitArray = TurtleRP.splitString(arg1, '"')
         local firstChunk = splitArray[1]
+        local firstFour = strsub(firstChunk, 1, 4)
         local firstThree = strsub(firstChunk, 1, 3)
-        if firstThree == "|| " then
+        local firstOne = strsub(firstChunk, 1, 1)
+        local showEmoteName = TurtleRPSettings and TurtleRPSettings["auto_emote_name"] == "1"
+        local hideNameCompletely = false
+
+        if firstFour == "||| " then
+          firstChunk = strsub(firstChunk, 5)
+          hideNameCompletely = true
+          nameString = ""
+        elseif firstThree == "|| " then
           firstChunk = strsub(firstChunk, 4)
-         local showName = TurtleRPSettings and TurtleRPSettings["auto_emote_name"] == "1"
-
-          if showName then
-            local displayName = arg2
-            local character = TurtleRPCharacters[arg2]
-
-            if character and character.full_name and character.full_name ~= "" then
-              local classColor = character.class_color or "FFFFFF"
-              local fullName = character.full_name
-
-              if character.title and character.title ~= "" then
-                displayName = "|cff" .. classColor .. character.title .. " " .. fullName .. "|r|cffFF7E40 "
-              else
-                displayName = "|cff" .. classColor .. fullName .. "|r|cffFF7E40 "
-              end
-            end
-            nameString = displayName
+          if showEmoteName then
+            nameString = TurtleRP.GetChatDisplayName(arg2, arg2, true)
           else
+            hideNameCompletely = true
             nameString = ""
           end
-        else
-          local displayName = arg2
-          local character = TurtleRPCharacters[arg2]
-
-          if character and character.full_name and character.full_name ~= "" then
-            local classColor = character.class_color or "FFFFFF"
-            local fullName = character.full_name
-
-            if character.title and character.title ~= "" then
-              displayName = "|cff" .. classColor .. character.title .. " " .. fullName .. "|r|cffFF7E40 "
-            else
-              displayName = "|cff" .. classColor .. fullName .. "|r|cffFF7E40 "
-            end
-          end
-
+        elseif firstOne == "|" then
+          firstChunk = strsub(firstChunk, 2)
+          firstChunk = string.gsub(firstChunk, "^%s*", "")
+          hideNameCompletely = true
           nameString = ""
-          firstChunk = displayName .. firstChunk
+        else
+          nameString = TurtleRP.GetChatDisplayName(arg2, arg2, true)
         end
 
         local newString = beginningQuoteFlag[this:GetID()] == 1 and (" |cffFFFFFF" .. firstChunk) or firstChunk
-
         if getn(splitArray) > 1 then
           for i = 2, getn(splitArray) do
-            if (i - math.floor(i/2)*2) == 0 then -- even index (inside quotes)
+            if (i - math.floor(i/2)*2) == 0 then
               local colorChange = beginningQuoteFlag[this:GetID()] == 1 and "|cffFF7E40" or "|cffFFFFFF"
               local colorRevert = beginningQuoteFlag[this:GetID()] == 1 and "|cffFFFFFF" or "|cffFF7E40"
               local finalQuoteToAdd = splitArray[i + 1] and '"' or ''
@@ -147,10 +126,17 @@ function TurtleRP.emote_events()
           end
         end
         local body
-        if nameString == "" and firstThree == "|| " and not (TurtleRPSettings and TurtleRPSettings["auto_emote_name"] == "1") then
+        if hideNameCompletely then
           body = "|cffFF7E40" .. newString
         else
-          body = format(TEXT(getglobal("CHAT_"..type.."_GET")) .. TurtleRP.EscapePercentageCharacter(newString), "|cffFF7E40" .. nameString)
+          local formattedName = nameString
+          if formattedName == nil or formattedName == "" then
+            formattedName = TurtleRP.GetChatDisplayName(arg2, arg2, true)
+          end
+          body = format(
+            TEXT(getglobal("CHAT_"..type.."_GET")) .. "|cffFF7E40" .. TurtleRP.EscapePercentageCharacter(newString) .. "|r",
+            formattedName
+          )
         end
         this:AddMessage(body)
       end
@@ -165,6 +151,8 @@ function TurtleRP.SendLongFormMessage(type, message)
   local emotePrefix = ""
 
  if finalType == "EMOTE" then
+    local suppressEmoteName = false
+
     if TurtleRP.sendWithError == nil then
       if string.find(message, '"') then
         local splitArrayQuotes = TurtleRP.splitString(message, '"')
@@ -177,11 +165,12 @@ function TurtleRP.SendLongFormMessage(type, message)
       end
     end
 
-        if strsub(message, 1, 1) == "|" then
+    if strsub(message, 1, 1) == "|" then
+      suppressEmoteName = true
       message = string.gsub(message, "^|%s*", "", 1)
     end
 
-    emotePrefix = "|| "
+    emotePrefix = suppressEmoteName and "||| " or "|| "
   end
   local splitMessage = TurtleRP.splitString(message, " ")
   TurtleRP.sendingLongForm = getn(splitMessage)
