@@ -388,15 +388,9 @@
                 this:SetWidth(width);
                 getglobal(this:GetName().."Middle"):SetWidth(width - 9);
               </OnLoad>
-              <OnClick>
-                if TurtleRP.sortByKey == "player_name" then
-                  TurtleRP.sortByOrder = TurtleRP.sortByOrder == 0 and 1 or 0
-                end
-                TurtleRP.sortByKey = "player_name"
-                TurtleRP.updateDirectorySearch()
-                TurtleRP_DirectoryFrame_Directory_ScrollFrameScrollBar:SetValue(0)
-                TurtleRP.Directory_ScrollBar_Update()
-              </OnClick>
+				<OnClick>
+				  TurtleRP.SetDirectorySortMode("player_name")
+				</OnClick>
             </Scripts>
           </Button>
           <!-- <Button name="$parent_ColumnHeader2" inherits="WhoFrameColumnHeaderTemplate" text="Character Name">
@@ -453,20 +447,14 @@
                   <OnEvent>
                     WhoFrameDropDown_OnEvent()
                   </OnEvent>
-                  <OnMouseUp>
-					  local textForSort = 'full_name'
-					  if TurtleRP.secondColumn == "Zone" then
-						textForSort = 'zone'
-					  elseif TurtleRP.secondColumn == "Short Note" then
-						textForSort = 'short_note'
-					  end
-					  if TurtleRP.sortByKey == textForSort then
-						TurtleRP.sortByOrder = TurtleRP.sortByOrder == 0 and 1 or 0
-					  end
-					  TurtleRP.sortByKey = textForSort
-					  TurtleRP.updateDirectorySearch()
-					  TurtleRP_DirectoryFrame_Directory_ScrollFrameScrollBar:SetValue(0)
-					  TurtleRP.Directory_ScrollBar_Update()
+					<OnMouseUp>
+						  local mode = "character_name"
+						  if TurtleRP.secondColumn == "Zone" then
+							mode = "zone"
+						  elseif TurtleRP.secondColumn == "Short Note" then
+							mode = "short_note"
+						  end
+						  TurtleRP.SetDirectorySortMode(mode)
 					</OnMouseUp>
                 </Scripts>
               </Frame>
@@ -491,15 +479,9 @@
                 this:SetWidth(width);
                 getglobal(this:GetName().."Middle"):SetWidth(width - 9);
               </OnLoad>
-              <OnClick>
-                if TurtleRP.sortByKey == "status" then
-                  TurtleRP.sortByOrder = TurtleRP.sortByOrder == 0 and 1 or 0
-                end
-                TurtleRP.sortByKey = "status"
-                TurtleRP.updateDirectorySearch()
-                TurtleRP_DirectoryFrame_Directory_ScrollFrameScrollBar:SetValue(0)
-                TurtleRP.Directory_ScrollBar_Update()
-              </OnClick>
+				<OnClick>
+				  TurtleRP.SetDirectorySortMode("status")
+				</OnClick>
             </Scripts>
           </Button>
           <!-- <Button name="$parent_ColumnHeader4" inherits="WhoFrameColumnHeaderTemplate" text="CLASS">
@@ -686,81 +668,26 @@
               </Anchor>
             </Anchors>
           </Button>
-          <Button name="$parent_RefreshButton" inherits="UIPanelButtonTemplate" text="REFRESH">
-            <Size>
-              <AbsDimension x="85" y="22"/>
-            </Size>
-            <Anchors>
-              <Anchor point="BOTTOMLEFT" relativeTo="$parent" relativePoint="BOTTOMLEFT">
-                <Offset>
-                  <AbsDimension x="20" y="83"/>
-                </Offset>
-              </Anchor>
-            </Anchors>
-            <Scripts>
-              <OnClick>
-                TurtleRP.updateDirectorySearch()
-                TurtleRP.Directory_ScrollBar_Update()
-              </OnClick>
-            </Scripts>
-          </Button>
-          <Button name="$parent_CleanButton" inherits="UIPanelButtonTemplate" text="Clean Directory">
-            <Size>
-              <AbsDimension x="130" y="22"/>
-            </Size>
-            <Anchors>
-              <Anchor point="LEFT" relativeTo="$parent_RefreshButton" relativePoint="RIGHT">
-                <Offset>
-                  <AbsDimension x="0" y="0"/>
-                </Offset>
-              </Anchor>
-            </Anchors>
-            <Scripts>
-              <OnClick>
-                TurtleRP.cleanDirectory()
-                TurtleRP.Directory_ScrollBar_Update()
-              </OnClick>
-              <OnEnter>
-                GameTooltip:SetOwner(this, "ANCHOR_RIGHT");
-                GameTooltip:SetText("Remove duplicates and players with invalid names.");
-              </OnEnter>
-              <OnLeave>
-                GameTooltip:Hide();
-              </OnLeave>
-            </Scripts>
-          </Button>
-
-          <Button name="$parent_DeleteButton" inherits="UIPanelButtonTemplate" text="Delete Player">
-            <Size>
-              <AbsDimension x="110" y="22"/>
-            </Size>
-            <Anchors>
-              <Anchor point="LEFT" relativeTo="$parent_CleanButton" relativePoint="RIGHT">
-                <Offset>
-                  <AbsDimension x="-5" y="0"/>
-                </Offset>
-              </Anchor>
-            </Anchors>
-            <Scripts>
-              <OnLoad>
-                this:Disable()
-              </OnLoad>
-              <OnClick>
-                if TurtleRP.currentlyViewedPlayer then
-                  TurtleRPCharacters[TurtleRP.currentlyViewedPlayer] = nil
-                  TurtleRPQueryablePlayers[TurtleRP.currentlyViewedPlayer] = nil
-                  TurtleRP.Directory_ScrollBar_Update()
-                end
-              </OnClick>
-              <OnEnter>
-                GameTooltip:SetOwner(this, "ANCHOR_RIGHT");
-                GameTooltip:SetText("Delete selected player from directory.");
-              </OnEnter>
-              <OnLeave>
-                GameTooltip:Hide();
-              </OnLeave>
-            </Scripts>
-          </Button>
+			<Button name="$parent_OfflineToggleButton" inherits="UIPanelButtonTemplate" text="Hide Offline">
+			  <Size>
+				<AbsDimension x="90" y="22"/>
+			  </Size>
+			  <Anchors>
+				<Anchor point="BOTTOMLEFT" relativeTo="$parent" relativePoint="BOTTOMLEFT">
+				  <Offset>
+					<AbsDimension x="18" y="83"/>
+				  </Offset>
+				</Anchor>
+			  </Anchors>
+			  <Scripts>
+				<OnClick>
+				  TurtleRP.ToggleOfflineDirectoryVisibility()
+				</OnClick>
+				<OnShow>
+				  TurtleRP.UpdateOfflineToggleButton()
+				</OnShow>
+			  </Scripts>
+			</Button>
           <EditBox name="$parent_EditBox" autoFocus="false" frameStrata="HIGH" historyLines="32">
             <Size>
               <AbsDimension x="296" y="32"/>
@@ -773,11 +700,14 @@
               </Anchor>
             </Anchors>
             <Scripts>
-              <OnShow>
-                this:ClearFocus();
-              </OnShow>
+				<OnShow>
+				  this:ClearFocus();
+				  TurtleRP.UpdateDirectorySearchPlaceholder()
+				</OnShow>
+
 				<OnTextChanged>
-					this.lastChangeTime = GetTime()
+				  this.lastChangeTime = GetTime()
+				  TurtleRP.UpdateDirectorySearchPlaceholder()
 				</OnTextChanged>
 				<OnUpdate>
 					if this.lastChangeTime and (GetTime() - this.lastChangeTime > 1.5) then
@@ -801,9 +731,41 @@
               <OnEscapePressed>
                 this:ClearFocus();
               </OnEscapePressed>
+				<OnEditFocusGained>
+				  TurtleRP.directorySearchHasFocus = true
+				  TurtleRP.UpdateDirectorySearchPlaceholder()
+				</OnEditFocusGained>
+				<OnEditFocusLost>
+				  TurtleRP.directorySearchHasFocus = false
+				  TurtleRP.UpdateDirectorySearchPlaceholder()
+				</OnEditFocusLost>
             </Scripts>
             <FontString inherits="ChatFontNormal" bytes="256"/>
           </EditBox>
+		  <Frame name="$parent_EditBoxPlaceholderFrame" frameStrata="HIGH" enableMouse="false">
+			  <Size>
+				<AbsDimension x="296" y="32"/>
+			  </Size>
+			  <Anchors>
+				<Anchor point="CENTER" relativeTo="$parent_EditBox" relativePoint="CENTER"/>
+			  </Anchors>
+			  <Layers>
+				<Layer level="ARTWORK">
+				  <FontString name="$parentText" inherits="GameFontDisableSmall" text="Search players..." justifyH="LEFT">
+					<Size>
+					  <AbsDimension x="280" y="14"/>
+					</Size>
+					<Anchors>
+					  <Anchor point="LEFT">
+						<Offset>
+						  <AbsDimension x="6" y="0"/>
+						</Offset>
+					  </Anchor>
+					</Anchors>
+				  </FontString>
+				</Layer>
+			  </Layers>
+			</Frame>
           <ScrollFrame name="$parent_ScrollFrame" inherits="FauxScrollFrameTemplate">
             <Size>
               <AbsDimension x="296" y="287"/>
