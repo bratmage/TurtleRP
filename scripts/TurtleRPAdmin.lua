@@ -96,7 +96,7 @@ function TurtleRP.ApplyDescriptionTag()
     end
 end
 
-function TurtleRP.OnAdminTabClick(id)
+function TurtleRP.ApplyAdminTabClick(id)
   for i=1, 6 do
     if i ~= id then
       getglobal("TurtleRP_AdminSB_Tab"..i):SetChecked(0)
@@ -106,11 +106,9 @@ function TurtleRP.OnAdminTabClick(id)
       getglobal("TurtleRP_AdminSB_Content"..i):Show()
     end
   end
-
   TurtleRP_AdminSB_Content1_Tab2:Hide()
   TurtleRP_AdminSB_SpellBookFrameTabButton1:SetNormalTexture("Interface\\Spellbook\\UI-Spellbook-Tab1-Selected")
   TurtleRP_AdminSB_SpellBookFrameTabButton2:SetNormalTexture("Interface\\Spellbook\\UI-SpellBook-Tab-Unselected")
-
   if id == 1 then
     TurtleRP_AdminSB_SpellBookFrameTabButton1:Show()
     TurtleRP_AdminSB_SpellBookFrameTabButton2:Show()
@@ -120,7 +118,23 @@ function TurtleRP.OnAdminTabClick(id)
   end
 end
 
-function TurtleRP.OnBottomTabAdminClick(bookType)
+function TurtleRP.OnAdminTabClick(id)
+  local currentTab = nil
+  for i=1, 6 do
+    local tab = getglobal("TurtleRP_AdminSB_Tab"..i)
+    if tab and tab:GetChecked() then
+      currentTab = i
+      break
+    end
+  end
+  if currentTab == id then
+    TurtleRP.ApplyAdminTabClick(id)
+    return
+  end
+  TurtleRP.RequestAdminTabSwitch("main", id)
+end
+
+function TurtleRP.ApplyBottomTabAdminClick(bookType)
   if bookType == "profile" then
     TurtleRP_AdminSB_Content1:Show()
     TurtleRP_AdminSB_SpellBookFrameTabButton1:SetNormalTexture("Interface\\Spellbook\\UI-Spellbook-Tab1-Selected")
@@ -135,6 +149,20 @@ function TurtleRP.OnBottomTabAdminClick(bookType)
     TurtleRP_AdminSB_SpellBookFrameTabButton2:SetNormalTexture("Interface\\Spellbook\\UI-Spellbook-Tab1-Selected")
     TurtleRP.SetInitialDropdowns()
   end
+end
+
+function TurtleRP.OnBottomTabAdminClick(bookType)
+  local currentBookType = "profile"
+  if TurtleRP_AdminSB_Content1_Tab2 and TurtleRP_AdminSB_Content1_Tab2:IsShown() then
+    currentBookType = "rp_style"
+  end
+
+  if currentBookType == bookType then
+    TurtleRP.ApplyBottomTabAdminClick(bookType)
+    return
+  end
+
+  TurtleRP.RequestAdminTabSwitch("bottom", bookType)
 end
 
 function TurtleRP.ShouldShareLocation()
