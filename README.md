@@ -12,36 +12,25 @@ For more information, visit [https://tempranova.github.io/turtlerp/](https://tem
 
 To archive from source code, use `git archive --output=TurtleRP-<v>.zip --prefix=TurtleRP/ HEAD`.
 
-## Version 1.3.2
-### - Profile Preview Button added!
-- While editting your profile, you may click the preview button to see a 'live' version of it without saving.
-- Pressing esc key on a textbox now properly exits the textbox entry.
-- **New Unsaved Changes warning popup when attempting to exit or esc from a menu where you can unsaved changes, instead of just silently losing everything.**
-- Big HTML system overhaul in the description tab. Should work consistently now, and included formatting buttons for everyone to try out.
-### - Short Notes added!
-- This is a small personal note above the locally saved "notes" section when viewing a profile.
-- It's all locally saved only. Recommend like, a tiny description of the character or a relationship to know if you've met them before.
-- Short Note appears as a category to view in the directory. Filtering/sorting coming at a later date.
-- Notes are properly synced now. Previously, you could have both notes for yourself in your admin/edit window, and in your live profile. Now it is shared and you may edit either field.
-### - Auto Disable Location Sharing while PvP flagged setting.
-- The previous setting of disabled in battlegrounds didn't actually work at all. This replaces that and will automatic stop pinging your location once you are pvp flagged, and will go back to whatever setting you had after you are unflagged.
-- I understand the desire for disabling tooltips while in battlegrounds, but at the moment because of how they are saved, it will not be possible. Another thing for a future rewrite.
-### - RP Names and Title added to emotes!
-- /e (also known as /emote or /me) now automatically sends the emote with the Title and Full Name of the emoter.
-- You may still do /e | to send without any name preface at all
-- Added an "Include Name before Emote" toggle to the emote section of the turtle chatbox. Does what it says on the tin.
-### - Right Click in chat now has a View TurtleRP Profile button.
-- This will return no profile if they do not have TRP.
-- Shift clicking the name will also now show the player name/ign in addition to the RP Name.
-### - Various Small System Changes. Much smoother overall now.
-- Fixed the bug where profile tabs would sometimes overlap/double display when receiving new data.
-- Fixed several crashes regarding attempting to read blank information.
-- Fixed Reset Tray Position button sometimes not appearing.
-- Fixed some of the tooltips in the icon tray to properly display.
-- Renamed "Open Main Window" in icon tray to "Profile & Settings"
-- Implemented a version checker to send a notification when you have an out of date TurtleRP build. Sadly this is only going foward so please help out by informing people to update!
-- The goal of the version check is that, with it, we can eventually have enough people on this build that we can start implementing more icons!
-- Clean-up of lots of... questionable logic. Making thing smoother.
+## Version 1.3.3
+Recommend reading the patch notes for 1.3.2 below for the exciting stuff. This is an emergency patch the new day to break some broken stuff.
+
+### Added a Disasable RP Color setting
+- This has been seperated into RP Names and RP Color in the settings menu now.
+- You can ALSO disable it for individual characters by opening their profile and going to the notes section. Sorry scarlet RPers, everyone complained about your dark red names.
+### Massive Directory Rework!
+- Almost the entire directory has been rewritten.
+- New internal sorting flow.
+- **Hide offline toggle at the botom.**
+- Live filtered results with an accurate counter on the bottom
+- Better handling for sorting as a whole.
+- Automatic database cleaning on load- I have no lag issues but please report any to me.
+### Several various "emergency" bug fixes - thank you for the feedback!
+- Fixed the emote override with | note removing names after a /e
+- Fixed login error popup when logging in without pfui
+- Added class token (blizzard_raid_colors) for when RP colors are off
+- Cleaned up several nil/state edge cases.
+
 
 
 **Known Issues**
@@ -72,6 +61,37 @@ To Do
 
 ### Recently Done
 
+1.3.2
+-- **Profile Preview Button added!**
+- While editting your profile, you may click the preview button to see a 'live' version of it without saving.
+- Pressing esc key on a textbox now properly exits the textbox entry.
+- **New Unsaved Changes warning popup when attempting to exit or esc from a menu where you can unsaved changes, instead of just silently losing everything.**
+- Big HTML system overhaul in the description tab. Should work consistently now, and included formatting buttons for everyone to try out.
+-- **Short Notes added!**
+- This is a small personal note above the locally saved "notes" section when viewing a profile.
+- It's all locally saved only. Recommend like, a tiny description of the character or a relationship to know if you've met them before.
+- Short Note appears as a category to view in the directory. Filtering/sorting coming at a later date.
+- Notes are properly synced now. Previously, you could have both notes for yourself in your admin/edit window, and in your live profile. Now it is shared and you may edit either field.
+-- **Auto Disable Location Sharing while PvP flagged setting.**
+- The previous setting of disabled in battlegrounds didn't actually work at all. This replaces that and will automatic stop pinging your location once you are pvp flagged, and will go back to whatever setting you had after you are unflagged.
+- I understand the desire for disabling tooltips while in battlegrounds, but at the moment because of how they are saved, it will not be possible. Another thing for a future rewrite.
+-- **RP Names and Title added to emotes!**
+- /e (also known as /emote or /me) now automatically sends the emote with the Title and Full Name of the emoter.
+- You may still do /e | to send without any name preface at all
+- Added an "Include Name before Emote" toggle to the emote section of the turtle chatbox. Does what it says on the tin.
+-- **Right Click in chat now has a View TurtleRP Profile button.**
+- This will return no profile if they do not have TRP.
+- Shift clicking the name will also now show the player name/ign in addition to the RP Name.
+-- **Various Small System Changes. Much smoother overall now.**
+- Fixed the bug where profile tabs would sometimes overlap/double display when receiving new data.
+- Fixed several crashes regarding attempting to read blank information.
+- Fixed Reset Tray Position button sometimes not appearing.
+- Fixed some of the tooltips in the icon tray to properly display.
+- Renamed "Open Main Window" in icon tray to "Profile & Settings"
+- Implemented a version checker to send a notification when you have an out of date TurtleRP build. Sadly this is only going foward so please help out by informing people to update!
+- The goal of the version check is that, with it, we can eventually have enough people on this build that we can start implementing more icons!
+- Clean-up of lots of... questionable logic. Making thing smoother.
+
 1.3.1
 - Added player name section when shift-clicking a name in chat.
 - Debounced search in directory. Updates 1.5 seconds after typing. Much smoother than enter but enter does still work.
@@ -81,11 +101,11 @@ To Do
 - Queue system for downloading profiles from /rp. Prevents a small bit of chat throttle, but still an issue. Oh well.
 
 **1.3.0**
-= **Character Name & Color now appear in chat windows!**
+-- **Character Name & Color now appear in chat windows!**
 - This may be toggled on and off in the settings.
-= **A brand new Title field has been added!**
+-- **A brand new Title field has been added!**
 - No more long names. Titles appear before the name in the profile and the tooltip, but do not appear in chat.
-= **TurtleRP Map Icons now display IC/OOC!**
+-- **TurtleRP Map Icons now display IC/OOC!**
 - Green icons if someone is IC, the old Grey/Purple is they are OOC. Make sure to start using your toggles!
 - Upon reaching Level 10, or logging in for the first time, a popup will appear prompting user to join the /rp chat channel.
 - Name 'usertag' in /rp (the bot we use in the Nordanaar RP discord!) no longer appears before message, only the discord handle.
