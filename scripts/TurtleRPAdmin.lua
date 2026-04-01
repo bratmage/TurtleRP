@@ -12,35 +12,30 @@ function TurtleRP.OpenAdmin()
 
   TurtleRP.previewCharacterInfo = nil
   TurtleRP.previewSource = nil
-  TurtleRP_IconSelector.selectedIconIndex = {}
+  if TurtleRP_IconSelector then
+    TurtleRP_IconSelector.selectedIconIndex = {}
+  end
 
   ShowUIPanel(TurtleRP_AdminSB)
   TurtleRP.populate_interface_user_data()
   TurtleRP.RefreshAdminStateSnapshot()
 
-  TurtleRP_AdminSB_Tab1:SetNormalTexture("Interface\\Icons\\Spell_Nature_MoonGlow")
-  TurtleRP_AdminSB_Tab1.tooltip = "Profile"
-  TurtleRP_AdminSB_Tab1:Show()
+  local adminTabs = {
+    [1] = { texture = "Interface\\Icons\\Spell_Nature_MoonGlow", tooltip = "Profile" },
+    [2] = { texture = "Interface\\Icons\\INV_Misc_Head_Human_02", tooltip = "At A Glance" },
+    [3] = { texture = "Interface\\Icons\\INV_Misc_StoneTablet_11", tooltip = "Description" },
+    [4] = { texture = "Interface\\Icons\\INV_Letter_03", tooltip = "Notes" },
+    [5] = { texture = "Interface\\Icons\\Trade_Engineering", tooltip = "Settings" },
+    [6] = { texture = "Interface\\Icons\\INV_Misc_QuestionMark", tooltip = "About / Help" }
+  }
 
-  TurtleRP_AdminSB_Tab2:SetNormalTexture("Interface\\Icons\\INV_Misc_Head_Human_02")
-  TurtleRP_AdminSB_Tab2.tooltip = "At A Glance"
-  TurtleRP_AdminSB_Tab2:Show()
-
-  TurtleRP_AdminSB_Tab3:SetNormalTexture("Interface\\Icons\\INV_Misc_StoneTablet_11")
-  TurtleRP_AdminSB_Tab3.tooltip = "Description"
-  TurtleRP_AdminSB_Tab3:Show()
-
-  TurtleRP_AdminSB_Tab4:SetNormalTexture("Interface\\Icons\\INV_Letter_03")
-  TurtleRP_AdminSB_Tab4.tooltip = "Notes"
-  TurtleRP_AdminSB_Tab4:Show()
-
-  TurtleRP_AdminSB_Tab5:SetNormalTexture("Interface\\Icons\\Trade_Engineering")
-  TurtleRP_AdminSB_Tab5.tooltip = "Settings"
-  TurtleRP_AdminSB_Tab5:Show()
-
-  TurtleRP_AdminSB_Tab6:SetNormalTexture("Interface\\Icons\\INV_Misc_QuestionMark")
-  TurtleRP_AdminSB_Tab6.tooltip = "About / Help"
-  TurtleRP_AdminSB_Tab6:Show()
+  for i = 1, 6 do
+    local tab = getglobal("TurtleRP_AdminSB_Tab" .. i)
+    local tabData = adminTabs[i]
+    tab:SetNormalTexture(tabData.texture)
+    tab.tooltip = tabData.tooltip
+    tab:Show()
+  end
 
   TurtleRP_AdminSB_Content1_Tab2:Hide()
 
@@ -137,15 +132,13 @@ end
 function TurtleRP.ApplyBottomTabAdminClick(bookType)
   if bookType == "profile" then
     TurtleRP_AdminSB_Content1:Show()
-    TurtleRP_AdminSB_SpellBookFrameTabButton1:SetNormalTexture("Interface\\Spellbook\\UI-Spellbook-Tab1-Selected")
     TurtleRP_AdminSB_Content1_Tab2:Hide()
+    TurtleRP_AdminSB_SpellBookFrameTabButton1:SetNormalTexture("Interface\\Spellbook\\UI-Spellbook-Tab1-Selected")
     TurtleRP_AdminSB_SpellBookFrameTabButton2:SetNormalTexture("Interface\\SpellBook\\UI-SpellBook-Tab-Unselected")
-  end
-
-  if bookType == "rp_style" then
+  elseif bookType == "rp_style" then
     TurtleRP_AdminSB_Content1:Hide()
-    TurtleRP_AdminSB_SpellBookFrameTabButton1:SetNormalTexture("Interface\\SpellBook\\UI-SpellBook-Tab-Unselected")
     TurtleRP_AdminSB_Content1_Tab2:Show()
+    TurtleRP_AdminSB_SpellBookFrameTabButton1:SetNormalTexture("Interface\\SpellBook\\UI-SpellBook-Tab-Unselected")
     TurtleRP_AdminSB_SpellBookFrameTabButton2:SetNormalTexture("Interface\\Spellbook\\UI-Spellbook-Tab1-Selected")
     TurtleRP.SetInitialDropdowns()
   end
@@ -265,7 +258,7 @@ function TurtleRP.makeIconFrames()
   local IconFrames = {}
   local numberOnRow = 0
   local currentRow = 0
-  for i=1,36 do
+  for i = 1, 36 do
     local thisIconFrame = CreateFrame("Button", "TurtleRPIcon_" .. i, TurtleRP_IconSelector_ScrollBox)
     thisIconFrame:SetWidth(32)
     thisIconFrame:SetHeight(32)
@@ -275,30 +268,19 @@ function TurtleRP.makeIconFrames()
     thisIconFrame:SetFont("Fonts\\FRIZQT__.ttf", 0)
     thisIconFrame:SetScript("OnClick", function()
       local thisIconIndex = thisIconFrame:GetText()
-      if TurtleRP.currentIconSelector == "icon" then
-        TurtleRP_AdminSB_Content1_IconButton:SetBackdrop({
-          bgFile = "Interface\\Icons\\" .. TurtleRPIcons[tonumber(thisIconIndex)]
-        })
-      elseif TurtleRP.currentIconSelector == "atAGlance1Icon" then
-        TurtleRP_AdminSB_Content2_AAG1IconButton:SetBackdrop({
-          bgFile = "Interface\\Icons\\" .. TurtleRPIcons[tonumber(thisIconIndex)]
-        })
-      elseif TurtleRP.currentIconSelector == "atAGlance2Icon" then
-        TurtleRP_AdminSB_Content2_AAG2IconButton:SetBackdrop({
-          bgFile = "Interface\\Icons\\" .. TurtleRPIcons[tonumber(thisIconIndex)]
-        })
-      elseif TurtleRP.currentIconSelector == "atAGlance3Icon" then
-        TurtleRP_AdminSB_Content2_AAG3IconButton:SetBackdrop({
-          bgFile = "Interface\\Icons\\" .. TurtleRPIcons[tonumber(thisIconIndex)]
-        })
-      end
       TurtleRP_IconSelector.selectedIconIndex = TurtleRP_IconSelector.selectedIconIndex or {}
       TurtleRP_IconSelector.selectedIconIndex[TurtleRP.currentIconSelector] = thisIconIndex
+      if TurtleRP.currentIconSelector == "icon" then
+        TurtleRP.setCharacterIcon()
+      else
+        TurtleRP.setAtAGlanceIcons()
+      end
+
       TurtleRP_IconSelector:Hide()
     end)
     IconFrames[i] = thisIconFrame
     numberOnRow = numberOnRow + 1
-    if (i - math.floor(i/6)*6) == 0 then
+    if (i - math.floor(i / 6) * 6) == 0 then
       currentRow = currentRow + 1
       numberOnRow = 0
     end
@@ -307,29 +289,36 @@ function TurtleRP.makeIconFrames()
 end
 
 function TurtleRP.renderIcons(iconOffset)
-  if TurtleRP.iconFrames ~= nil then
-    local filteredIcons = {}
-    local numberAdded = 0
+  if TurtleRP.iconFrames == nil then
+    return
+  end
+  local filteredIcons = {}
+  local numberAdded = 0
+  local filterText = string.lower(TurtleRP.iconSelectorFilter or "")
+
+  if filterText ~= "" then
     for i, iconName in ipairs(TurtleRPIcons) do
-      if TurtleRP.iconSelectorFilter ~= "" then
-        if TurtleRPIcons[i + iconOffset] ~= nil then
-          if string.find(string.lower(TurtleRPIcons[i + iconOffset]), string.lower(TurtleRP.iconSelectorFilter)) then
-            filteredIcons[numberAdded + 1] = i + iconOffset
-            numberAdded = numberAdded + 1
-          end
-        end
-      else
-        filteredIcons[numberAdded + 1] = i + iconOffset
+      if iconName and string.find(string.lower(iconName), filterText, 1, true) then
         numberAdded = numberAdded + 1
+        filteredIcons[numberAdded] = i
       end
     end
-    for i, iconFrame in ipairs(TurtleRP.iconFrames) do
-      if filteredIcons[i + iconOffset] ~= nil and TurtleRPIcons[filteredIcons[i + iconOffset]] ~= nil then
-        iconFrame:SetText(filteredIcons[i + iconOffset])
-        iconFrame:SetBackdrop({ bgFile = "Interface\\Icons\\" .. TurtleRPIcons[filteredIcons[i + iconOffset]] })
-      else
-        iconFrame:SetBackdrop(nil)
-      end
+  else
+    for i, iconName in ipairs(TurtleRPIcons) do
+      numberAdded = numberAdded + 1
+      filteredIcons[numberAdded] = i
+    end
+  end
+
+  for i, iconFrame in ipairs(TurtleRP.iconFrames) do
+    local iconListIndex = filteredIcons[i + iconOffset]
+    local iconName = iconListIndex and TurtleRPIcons[iconListIndex]
+    if iconName then
+      iconFrame:SetText(iconListIndex)
+      iconFrame:SetBackdrop({ bgFile = "Interface\\Icons\\" .. iconName })
+    else
+      iconFrame:SetText("")
+      iconFrame:SetBackdrop(nil)
     end
   end
 end
