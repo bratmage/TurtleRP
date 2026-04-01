@@ -71,7 +71,9 @@ function TurtleRP.mouseover_and_target_events()
   TurtleRP.targetFrame:EnableMouse()
   local defaultTargetFrameFunction = TurtleRP.targetFrame:GetScript("OnEnter")
   TurtleRP.targetFrame:SetScript("OnEnter", function()
-    defaultTargetFrameFunction()
+    if defaultTargetFrameFunction then
+      defaultTargetFrameFunction()
+    end
     if UnitName("target") == UnitName("player") then
       TurtleRP.buildTooltip(UnitName("player"), "target")
     end
@@ -102,7 +104,6 @@ function TurtleRP.send_ping_message()
   if TurtleRP.canChat() then
     TurtleRP.pingWithLocationAndVersion("P")
   end
-
   local TurtleRPChannelPingDelay = CreateFrame("Frame", "TurtleRPChannelPingDelay")
   local nextSend = GetTime() + TurtleRP.timeBetweenPings
   TurtleRPChannelPingDelay:SetScript("OnUpdate", function()
@@ -117,28 +118,27 @@ function TurtleRP.send_ping_message()
   end)
 end
 
-
 function TurtleRP.checkTTRPChannel()
   local lastVal = 0
   local chanList = { GetChannelList() }
+
   for _, value in next, chanList do
-      if value == TurtleRP.channelName then
-          TurtleRP.channelIndex = lastVal
-          break
-      end
-      lastVal = value
+    if value == TurtleRP.channelName then
+      TurtleRP.channelIndex = lastVal
+      break
+    end
+    lastVal = value
   end
+
   if TurtleRP.channelIndex == 0 then
     JoinChannelByName(TurtleRP.channelName)
-    if TurtleRP.canChat() then
-      TurtleRP.pingWithLocationAndVersion("A")
-    end
-  else
-    if TurtleRP.canChat() then
-      TurtleRP.pingWithLocationAndVersion("A")
-    end
+  end
+
+  if TurtleRP.canChat() then
+    TurtleRP.pingWithLocationAndVersion("A")
   end
 end
+
 function TurtleRP.communication_events()
     if not TurtleRP.rpQueueProcessorStarted then
         TurtleRP.StartRPRequestQueueProcessor()
@@ -373,23 +373,26 @@ function TurtleRP.recievePingInformation(playerName, msg)
     else
         charData["version"] = "unknown"
     end
-    if charData["version"] ~= "unknown" and TurtleRP.currentVersion ~= nil then
-		if TurtleRP.IsVersionOlder(charData["version"], TurtleRP.currentVersion) then
-			charData["outdated_version"] = "1"
-		else
-			charData["outdated_version"] = "0"
-		end
-		if TurtleRP.IsVersionOlder(TurtleRP.currentVersion, charData["version"]) then
-			if not versionWarningShown[charData["version"]] then
-				versionWarningShown[charData["version"]] = true
-				DEFAULT_CHAT_FRAME:AddMessage(
-					"|cffFF5555[TurtleRP]|r You are using an outdated version of TurtleRP. Update via Turtle Launcher!"
-				)
-			end
-		end
-	else
-		charData["outdated_version"] = "0"
-	end
+    if charData["version"] ~= "unknown" and TurtleRP.currentVersion ~= nil and TurtleRP.currentVersion ~= "" then
+        if TurtleRP.IsVersionOlder(charData["version"], TurtleRP.currentVersion) then
+            charData["outdated_version"] = "1"
+        else
+            charData["outdated_version"] = "0"
+        end
+        if TurtleRP.IsVersionOlder(TurtleRP.latestVersion or TurtleRP.currentVersion, charData["version"]) then
+            TurtleRP.latestVersion = charData["version"]
+        end
+        if TurtleRP.IsVersionOlder(TurtleRP.currentVersion, charData["version"]) then
+			if not versionWarningShown["shown"] then
+				versionWarningShown["shown"] = true
+                DEFAULT_CHAT_FRAME:AddMessage("|cffFF5555[TurtleRP]|r Your TurtleRP version is outdated.")
+                DEFAULT_CHAT_FRAME:AddMessage("|cffAAAAAAInstalled: " .. TurtleRP.currentVersion .. " | Latest seen: " .. charData["version"] .. "|r")
+                DEFAULT_CHAT_FRAME:AddMessage("|cffAAAAAAPlease update via Turtle Launcher to avoid compatibility issues. |cff587BAF - https://github.com/bratmage/TurtleRP.git -|r")
+            end
+        end
+    else
+        charData["outdated_version"] = "0"
+    end
 	if strs[5] ~= nil and strs[5] ~= "" then
         charData["currently_ic"] = strs[5]
     elseif charData["currently_ic"] == nil then
