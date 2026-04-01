@@ -200,7 +200,6 @@ function TurtleRP:OnEvent()
       end
       TurtleRPCharacters[UnitName("player")] = TurtleRPCharacterInfo
       TurtleRPPlayerProfiles[TurtleRPSettings["selected_profile"]] = TurtleRPCharacterInfo
-    end
 
     -- TurtleRPCharacters["A°hkir"] = TurtleRPCharacters["Ashkir"]
 
