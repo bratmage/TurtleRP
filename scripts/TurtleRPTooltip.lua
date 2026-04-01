@@ -11,30 +11,46 @@
 --]]
 
 function TurtleRP.tooltip_events()
-  -- Get defaults
   local tooltipDefaults = {}
-	for i = 1, 11 do
-    local lfontName, lfontHeight, lflag = getglobal("GameTooltipTextLeft" .. i):GetFont()
+  for i = 1, 11 do
+    local leftFont = getglobal("GameTooltipTextLeft" .. i)
+    local rightFont = getglobal("GameTooltipTextRight" .. i)
+
+    local lfontName, lfontHeight, lflag = leftFont:GetFont()
     tooltipDefaults["tooltipFontLeft" .. i .. "Name"] = lfontName
     tooltipDefaults["tooltipFontLeft" .. i .. "Height"] = lfontHeight
     tooltipDefaults["tooltipFontLeft" .. i .. "Flag"] = lflag
-    local rfontName, rfontHeight, rflag = getglobal("GameTooltipTextRight" .. i):GetFont()
+
+    local rfontName, rfontHeight, rflag = rightFont:GetFont()
     tooltipDefaults["tooltipFontRight" .. i .. "Name"] = rfontName
     tooltipDefaults["tooltipFontRight" .. i .. "Height"] = rfontHeight
     tooltipDefaults["tooltipFontRight" .. i .. "Flag"] = rflag
   end
-  -- Custom scripts
+
+  local function ResetTooltipFonts()
+    for i = 1, 11 do
+      getglobal("GameTooltipTextLeft" .. i):SetFont(
+        tooltipDefaults["tooltipFontLeft" .. i .. "Name"],
+        tooltipDefaults["tooltipFontLeft" .. i .. "Height"],
+        tooltipDefaults["tooltipFontLeft" .. i .. "Flag"]
+      )
+      getglobal("GameTooltipTextRight" .. i):SetFont(
+        tooltipDefaults["tooltipFontRight" .. i .. "Name"],
+        tooltipDefaults["tooltipFontRight" .. i .. "Height"],
+        tooltipDefaults["tooltipFontRight" .. i .. "Flag"]
+      )
+    end
+  end
+
   local defaultTooltipClearedScript = TurtleRP.gameTooltip:GetScript("OnTooltipCleared")
   TurtleRP.gameTooltip:SetScript("OnTooltipCleared", function()
-    for i = 1, 11 do
-      getglobal("GameTooltipTextLeft" .. i):SetFont(tooltipDefaults["tooltipFontLeft" .. i .. "Name"], tooltipDefaults["tooltipFontLeft" .. i .. "Height"], tooltipDefaults["tooltipFontLeft" .. i .. "Flag"])
-      getglobal("GameTooltipTextRight" .. i):SetFont(tooltipDefaults["tooltipFontRight" .. i .. "Name"], tooltipDefaults["tooltipFontRight" .. i .. "Height"], tooltipDefaults["tooltipFontRight" .. i .. "Flag"])
-    end
+    ResetTooltipFonts()
     TurtleRP_Tooltip_Icon:Hide()
     if defaultTooltipClearedScript then
       defaultTooltipClearedScript()
     end
   end)
+
   local defaultTooltipShowScript = TurtleRP.gameTooltip:GetScript("OnShow")
   TurtleRP.gameTooltip:SetScript("OnShow", function()
     if UnitIsPlayer("mouseover") then
@@ -44,14 +60,13 @@ function TurtleRP.tooltip_events()
       defaultTooltipShowScript()
     end
   end)
+
   local defaultTooltipHideScript = TurtleRP.gameTooltip:GetScript("OnHide")
   TurtleRP.gameTooltip:SetScript("OnHide", function()
-    -- Set defaults
-    for i = 1, 11 do
-      getglobal("GameTooltipTextLeft" .. i):SetFont(tooltipDefaults["tooltipFontLeft" .. i .. "Name"], tooltipDefaults["tooltipFontLeft" .. i .. "Height"], tooltipDefaults["tooltipFontLeft" .. i .. "Flag"])
-      getglobal("GameTooltipTextRight" .. i):SetFont(tooltipDefaults["tooltipFontRight" .. i .. "Name"], tooltipDefaults["tooltipFontRight" .. i .. "Height"], tooltipDefaults["tooltipFontRight" .. i .. "Flag"])
+    ResetTooltipFonts()
+    if defaultTooltipHideScript then
+      defaultTooltipHideScript()
     end
-    defaultTooltipHideScript()
     TurtleRP_Tooltip_Icon:Hide()
   end)
 end
