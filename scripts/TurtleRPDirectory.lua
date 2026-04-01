@@ -3,6 +3,12 @@
   See Github repo at https://github.com/tempranova/turtlerp
 ]]
 
+local type = type
+local time = time
+local strfind = string.find
+local strgsub = string.gsub
+local strlower = string.lower
+
 function TurtleRP.OpenDirectory()
   UIPanelWindows["TurtleRP_DirectoryFrame"] = { area = "left", pushable = 0 }
   if TurtleRP.cleanDirectory then
@@ -87,23 +93,19 @@ end
 
 local function TurtleRP_DirectoryStripColorCodes(text)
     text = TurtleRP_DirectorySafeString(text)
-    text = string.gsub(text, "|c%x%x%x%x%x%x%x%x", "")
-    text = string.gsub(text, "|r", "")
+    text = strgsub(text, "|c%x%x%x%x%x%x%x%x", "")
+    text = strgsub(text, "|r", "")
     return text
 end
 
 local function TurtleRP_DirectoryNormalizeAlpha(text)
     text = TurtleRP_DirectoryStripColorCodes(text)
-    text = string.lower(text)
-    text = string.gsub(text, "[^%w%s]", "")
-    text = string.gsub(text, "%s+", " ")
-    text = string.gsub(text, "^%s+", "")
-    text = string.gsub(text, "%s+$", "")
+    text = strlower(text)
+    text = strgsub(text, "[^%w%s]", "")
+    text = strgsub(text, "%s+", " ")
+    text = strgsub(text, "^%s+", "")
+    text = strgsub(text, "%s+$", "")
     return text
-end
-
-local function TurtleRP_DirectoryNormalizeSearch(text)
-    return TurtleRP_DirectoryNormalizeAlpha(text)
 end
 
 local function TurtleRP_DirectoryBuildRow(playerName, profile, currentTime)
@@ -111,13 +113,11 @@ local function TurtleRP_DirectoryBuildRow(playerName, profile, currentTime)
     local title = TurtleRP_DirectorySafeString(profile["title"])
     local zone = TurtleRP_DirectorySafeString(profile["zone"])
     local shortNote = ""
-
     if TurtleRPCharacterInfo
     and TurtleRPCharacterInfo["character_short_notes"]
     and type(TurtleRPCharacterInfo["character_short_notes"][playerName]) == "string" then
         shortNote = TurtleRPCharacterInfo["character_short_notes"][playerName]
     end
-
     local characterDisplayName = fullName
     if title ~= "" and fullName ~= "" then
         characterDisplayName = title .. " " .. fullName
@@ -128,7 +128,10 @@ local function TurtleRP_DirectoryBuildRow(playerName, profile, currentTime)
     if characterSortName == "" then
         characterSortName = characterDisplayName
     end
-
+    local sortPlayerName = TurtleRP_DirectoryNormalizeAlpha(playerName)
+    local sortCharacterName = TurtleRP_DirectoryNormalizeAlpha(characterSortName)
+    local sortZone = TurtleRP_DirectoryNormalizeAlpha(zone)
+    local sortShortNote = TurtleRP_DirectoryNormalizeAlpha(shortNote)
     local isOnline = TurtleRP_DirectoryIsOnline(playerName, currentTime)
 
     return {
@@ -142,10 +145,14 @@ local function TurtleRP_DirectoryBuildRow(playerName, profile, currentTime)
         is_online = isOnline,
         profile = profile,
 
-        sort_player_name = TurtleRP_DirectoryNormalizeAlpha(playerName),
-        sort_character_name = TurtleRP_DirectoryNormalizeAlpha(characterSortName),
-        sort_zone = TurtleRP_DirectoryNormalizeAlpha(zone),
-        sort_short_note = TurtleRP_DirectoryNormalizeAlpha(shortNote),
+        sort_player_name = sortPlayerName,
+        sort_character_name = sortCharacterName,
+        sort_zone = sortZone,
+        sort_short_note = sortShortNote,
+
+        search_player = sortCharacterName,
+        search_zone = sortZone,
+        search_short_note = sortShortNote,
     }
 end
 
@@ -154,11 +161,11 @@ local function TurtleRP_DirectoryMatchesSearch(row, searchTerm)
         return true
     end
     if TurtleRP.secondColumn == "Zone" then
-        return string.find(TurtleRP_DirectoryNormalizeSearch(row.zone), searchTerm, 1, true)
+        return strfind(row.search_zone or "", searchTerm, 1, true)
     elseif TurtleRP.secondColumn == "Short Note" then
-        return string.find(TurtleRP_DirectoryNormalizeSearch(row.character_short_notes), searchTerm, 1, true)
+        return strfind(row.search_short_note or "", searchTerm, 1, true)
     end
-    return string.find(TurtleRP_DirectoryNormalizeSearch(row.character_display_name), searchTerm, 1, true)
+    return strfind(row.search_player or "", searchTerm, 1, true)
 end
 
 local function TurtleRP_DirectoryCompareText(a, b, key, descending)
