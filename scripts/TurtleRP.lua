@@ -424,56 +424,39 @@ function TurtleRP.populate_interface_user_data()
   TurtleRP.SetProfileDropdown()
 end
 
-function TurtleRP.setCharacterIcon()
-  local pendingIcons = TurtleRP_IconSelector and TurtleRP_IconSelector.selectedIconIndex
-  local iconIndex = pendingIcons and pendingIcons["icon"] or TurtleRPCharacterInfo["icon"]
-
-  if iconIndex ~= "" and iconIndex ~= nil then
-    TurtleRP_AdminSB_Content1_IconButton:SetBackdrop({
+local function TurtleRP_SetIconButtonBackdrop(button, iconIndex)
+  if iconIndex ~= nil and iconIndex ~= "" and TurtleRPIcons[tonumber(iconIndex)] ~= nil then
+    button:SetBackdrop({
       bgFile = "Interface\\Icons\\" .. TurtleRPIcons[tonumber(iconIndex)]
     })
   else
-    TurtleRP_AdminSB_Content1_IconButton:SetBackdrop({
+    button:SetBackdrop({
       bgFile = "Interface\\Buttons\\UI-EmptySlot-White"
     })
   end
 end
 
+function TurtleRP.setCharacterIcon()
+  local pendingIcons = TurtleRP_IconSelector and TurtleRP_IconSelector.selectedIconIndex
+  local iconIndex = pendingIcons and pendingIcons["icon"] or TurtleRPCharacterInfo["icon"]
+  TurtleRP_SetIconButtonBackdrop(TurtleRP_AdminSB_Content1_IconButton, iconIndex)
+end
+
 function TurtleRP.setAtAGlanceIcons()
   local pendingIcons = TurtleRP_IconSelector and TurtleRP_IconSelector.selectedIconIndex or {}
   local characterInfo = TurtleRPCharacters[UnitName("player")]
-
-  local icon1 = pendingIcons["atAGlance1Icon"] or characterInfo["atAGlance1Icon"]
-  local icon2 = pendingIcons["atAGlance2Icon"] or characterInfo["atAGlance2Icon"]
-  local icon3 = pendingIcons["atAGlance3Icon"] or characterInfo["atAGlance3Icon"]
-
-  if icon1 ~= "" and icon1 ~= nil then
-    TurtleRP_AdminSB_Content2_AAG1IconButton:SetBackdrop({
-      bgFile = "Interface\\Icons\\" .. TurtleRPIcons[tonumber(icon1)]
-    })
-  else
-    TurtleRP_AdminSB_Content2_AAG1IconButton:SetBackdrop({
-      bgFile = "Interface\\Buttons\\UI-EmptySlot-White"
-    })
-  end
-  if icon2 ~= "" and icon2 ~= nil then
-    TurtleRP_AdminSB_Content2_AAG2IconButton:SetBackdrop({
-      bgFile = "Interface\\Icons\\" .. TurtleRPIcons[tonumber(icon2)]
-    })
-  else
-    TurtleRP_AdminSB_Content2_AAG2IconButton:SetBackdrop({
-      bgFile = "Interface\\Buttons\\UI-EmptySlot-White"
-    })
-  end
-  if icon3 ~= "" and icon3 ~= nil then
-    TurtleRP_AdminSB_Content2_AAG3IconButton:SetBackdrop({
-      bgFile = "Interface\\Icons\\" .. TurtleRPIcons[tonumber(icon3)]
-    })
-  else
-    TurtleRP_AdminSB_Content2_AAG3IconButton:SetBackdrop({
-      bgFile = "Interface\\Buttons\\UI-EmptySlot-White"
-    })
-  end
+  TurtleRP_SetIconButtonBackdrop(
+    TurtleRP_AdminSB_Content2_AAG1IconButton,
+    pendingIcons["atAGlance1Icon"] or characterInfo["atAGlance1Icon"]
+  )
+  TurtleRP_SetIconButtonBackdrop(
+    TurtleRP_AdminSB_Content2_AAG2IconButton,
+    pendingIcons["atAGlance2Icon"] or characterInfo["atAGlance2Icon"]
+  )
+  TurtleRP_SetIconButtonBackdrop(
+    TurtleRP_AdminSB_Content2_AAG3IconButton,
+    pendingIcons["atAGlance3Icon"] or characterInfo["atAGlance3Icon"]
+  )
 end
 
 -- Profile Drop Down setup
@@ -707,6 +690,7 @@ function TurtleRP.RequestAdminTabSwitch(tabType, value)
   elseif tabType == "bottom" then
     TurtleRP.adminPendingBottomTabSwitch = value
   end
+
   StaticPopup_Show("TTRP_ADMIN_UNSAVED")
 end
 
@@ -816,9 +800,7 @@ function TurtleRP.save_general()
   local ooc_pronouns = TurtleRP_AdminSB_Content1_OOCPronounsInput:GetText()
   TurtleRP_AdminSB_Content1_OOCPronounsInput:ClearFocus()
   TurtleRPCharacterInfo["ooc_pronouns"] = TurtleRP.validateBeforeSaving(ooc_pronouns)
-
   TurtleRPCharacterInfo["nsfw"] = TurtleRP_AdminSB_Content1_NSFWButton:GetChecked() and "1" or "0"
-
   TurtleRPCharacters[UnitName("player")] = TurtleRPCharacterInfo
   TurtleRP.setCharacterIcon()
   TurtleRP.RefreshAdminStateSnapshot()
@@ -860,7 +842,6 @@ function TurtleRP.save_at_a_glance()
   local aag3TitleText = TurtleRP_AdminSB_Content2_AAG3TitleInput:GetText()
   TurtleRP_AdminSB_Content2_AAG3TitleInput:ClearFocus()
   TurtleRPCharacterInfo["atAGlance3Title"] = TurtleRP.validateBeforeSaving(aag3TitleText)
-
   local pendingIcons = TurtleRP_IconSelector and TurtleRP_IconSelector.selectedIconIndex or {}
   if pendingIcons["atAGlance1Icon"] ~= nil then
     TurtleRPCharacterInfo["atAGlance1Icon"] = pendingIcons["atAGlance1Icon"]
@@ -871,61 +852,11 @@ function TurtleRP.save_at_a_glance()
   if pendingIcons["atAGlance3Icon"] ~= nil then
     TurtleRPCharacterInfo["atAGlance3Icon"] = pendingIcons["atAGlance3Icon"]
   end
-
   TurtleRPCharacters[UnitName("player")] = TurtleRPCharacterInfo
   TurtleRP.setAtAGlanceIcons()
   TurtleRP.RefreshAdminStateSnapshot()
 end
 
-function TurtleRP.save_style()
-  TurtleRPCharacterInfo['keyT'] = TurtleRP.randomchars()
-  local experience = UIDropDownMenu_GetSelectedValue(TurtleRP_AdminSB_Content1_Tab2_ExperienceDropdown)
-  TurtleRPCharacterInfo["experience"] = experience ~= nil and experience or 0
-  local walkups = UIDropDownMenu_GetSelectedValue(TurtleRP_AdminSB_Content1_Tab2_WalkupsDropdown)
-  TurtleRPCharacterInfo["walkups"] = walkups ~= nil and walkups or 0
-  local injury = UIDropDownMenu_GetSelectedValue(TurtleRP_AdminSB_Content1_Tab2_InjuryDropdown)
-  TurtleRPCharacterInfo["injury"] = injury ~= nil and injury or 0
-  local romance = UIDropDownMenu_GetSelectedValue(TurtleRP_AdminSB_Content1_Tab2_RomanceDropdown)
-  TurtleRPCharacterInfo["romance"] = romance ~= nil and romance or 0
-  local death = UIDropDownMenu_GetSelectedValue(TurtleRP_AdminSB_Content1_Tab2_DeathDropdown)
-  TurtleRPCharacterInfo["death"] = death ~= nil and death or 0
-  TurtleRPCharacters[UnitName("player")] = TurtleRPCharacterInfo
-end
-function TurtleRP.save_at_a_glance()
-  TurtleRPCharacterInfo['keyT'] = TurtleRP.randomchars()
-  local aag1Text = TurtleRP_AdminSB_Content2_AtAGlance1ScrollBox_AAG1Input:GetText()
-  TurtleRP_AdminSB_Content2_AtAGlance1ScrollBox_AAG1Input:ClearFocus()
-  TurtleRPCharacterInfo["atAGlance1"] = TurtleRP.validateBeforeSaving(aag1Text)
-  local aag1TitleText = TurtleRP_AdminSB_Content2_AAG1TitleInput:GetText()
-  TurtleRP_AdminSB_Content2_AAG1TitleInput:ClearFocus()
-  TurtleRPCharacterInfo["atAGlance1Title"] = TurtleRP.validateBeforeSaving(aag1TitleText)
-  local aag2Text = TurtleRP_AdminSB_Content2_AtAGlance2ScrollBox_AAG2Input:GetText()
-  TurtleRP_AdminSB_Content2_AtAGlance2ScrollBox_AAG2Input:ClearFocus()
-  TurtleRPCharacterInfo["atAGlance2"] = TurtleRP.validateBeforeSaving(aag2Text)
-  local aag2TitleText = TurtleRP_AdminSB_Content2_AAG2TitleInput:GetText()
-  TurtleRP_AdminSB_Content2_AAG2TitleInput:ClearFocus()
-  TurtleRPCharacterInfo["atAGlance2Title"] = TurtleRP.validateBeforeSaving(aag2TitleText)
-  local aag3Text = TurtleRP_AdminSB_Content2_AtAGlance3ScrollBox_AAG3Input:GetText()
-  TurtleRP_AdminSB_Content2_AtAGlance3ScrollBox_AAG3Input:ClearFocus()
-  TurtleRPCharacterInfo["atAGlance3"] = TurtleRP.validateBeforeSaving(aag3Text)
-  local aag3TitleText = TurtleRP_AdminSB_Content2_AAG3TitleInput:GetText()
-  TurtleRP_AdminSB_Content2_AAG3TitleInput:ClearFocus()
-  TurtleRPCharacterInfo["atAGlance3Title"] = TurtleRP.validateBeforeSaving(aag3TitleText)
-
-  local pendingIcons = TurtleRP_IconSelector and TurtleRP_IconSelector.selectedIconIndex or {}
-  if pendingIcons["atAGlance1Icon"] ~= nil then
-    TurtleRPCharacterInfo["atAGlance1Icon"] = pendingIcons["atAGlance1Icon"]
-  end
-  if pendingIcons["atAGlance2Icon"] ~= nil then
-    TurtleRPCharacterInfo["atAGlance2Icon"] = pendingIcons["atAGlance2Icon"]
-  end
-  if pendingIcons["atAGlance3Icon"] ~= nil then
-    TurtleRPCharacterInfo["atAGlance3Icon"] = pendingIcons["atAGlance3Icon"]
-  end
-
-  TurtleRPCharacters[UnitName("player")] = TurtleRPCharacterInfo
-  TurtleRP.setAtAGlanceIcons()
-end
 function TurtleRP.save_description()
   TurtleRPCharacterInfo['keyD'] = TurtleRP.randomchars()
   local description = TurtleRP_AdminSB_Content3_DescriptionScrollBox_DescriptionInput:GetText()
@@ -934,6 +865,7 @@ function TurtleRP.save_description()
   TurtleRPCharacters[UnitName("player")] = TurtleRPCharacterInfo
   TurtleRP.RefreshAdminStateSnapshot()
 end
+
 function TurtleRP.save_notes()
   local short_note = TurtleRP_AdminSB_Content4_ShortNoteBox_Input:GetText()
   TurtleRP_AdminSB_Content4_ShortNoteBox_Input:ClearFocus()
@@ -948,6 +880,7 @@ function TurtleRP.save_notes()
   end
   TurtleRP.RefreshAdminStateSnapshot()
 end
+
 function TurtleRP.save_character_notes()
   local notes = TurtleRP_CharacterDetails_Notes_NotesScrollBox_NotesContent_NotesInput:GetText()
   TurtleRP_CharacterDetails_Notes_NotesScrollBox_NotesContent_NotesInput:ClearFocus()
