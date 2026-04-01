@@ -20,12 +20,18 @@ function TurtleRP.IconTrayMover(actionType, frame)
 end
 
 function TurtleRP.BindFrameToWorldFrame(frame)
+	if not frame then
+		return
+	end
 	local scale = UIParent:GetEffectiveScale();
 	frame:SetParent(WorldFrame);
 	frame:SetScale(scale);
 end
 
 function TurtleRP.BindFrameToUIParent(frame)
+	if not frame then
+		return
+	end
 	frame:SetParent(UIParent);
 	frame:SetScale(1);
 end
@@ -38,14 +44,16 @@ function TurtleRP.EnableRPMode()
 	TurtleRP.BindFrameToWorldFrame(EmoteMenu);
 	TurtleRP.BindFrameToWorldFrame(LanguageMenu);
 	TurtleRP.BindFrameToWorldFrame(VoiceMacroMenu);
+	TurtleRP.BindFrameToWorldFrame(TurtleRP_IconTray)
+	TurtleRP.BindFrameToWorldFrame(TurtleRP_ChatBox)
 	--TurtleRP.BindFrameToWorldFrame(TurtleRPInfobox);
+
 	for i = 1, 7 do
-    TurtleRP.BindFrameToWorldFrame(TurtleRP_IconTray)
-    TurtleRP.BindFrameToWorldFrame(TurtleRP_ChatBox)
 		TurtleRP.BindFrameToWorldFrame(getglobal("ChatFrame" .. i));
 		TurtleRP.BindFrameToWorldFrame(getglobal("ChatFrame" .. i .. "Tab"));
 		TurtleRP.BindFrameToWorldFrame(getglobal("ChatFrame" .. i .. "TabDockRegion"));
 	end
+
 	TurtleRP.RPMode = 1;
 	CloseAllWindows();
 	UIParent:Hide();
@@ -66,14 +74,16 @@ function TurtleRP.DisableRPMode()
 	LanguageMenu:SetFrameStrata("DIALOG");
 	TurtleRP.BindFrameToUIParent(VoiceMacroMenu);
 	VoiceMacroMenu:SetFrameStrata("DIALOG");
+	TurtleRP.BindFrameToUIParent(TurtleRP_IconTray)
+	TurtleRP.BindFrameToUIParent(TurtleRP_ChatBox)
 	--TurtleRP.BindFrameToUIParent(TurtleRPInfobox);
+
 	for i = 1, 7 do
-    TurtleRP.BindFrameToUIParent(TurtleRP_IconTray)
-    TurtleRP.BindFrameToUIParent(TurtleRP_ChatBox)
 		TurtleRP.BindFrameToUIParent(getglobal("ChatFrame" .. i));
 		TurtleRP.BindFrameToUIParent(getglobal("ChatFrame" .. i .. "Tab"));
 		TurtleRP.BindFrameToUIParent(getglobal("ChatFrame" .. i .. "TabDockRegion"));
 	end
+
 	TurtleRP.RPMode = 0;
 	UIParent:Show();
 end
