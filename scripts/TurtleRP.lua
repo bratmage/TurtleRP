@@ -182,7 +182,9 @@ function TurtleRP:OnEvent()
       end
     end
     -- For adding additional fields after plugin is in use
-    if TurtleRPCharacterInfo ~= nil then
+	if TurtleRPCharacterInfo["title"] == nil then
+	  TurtleRPCharacterInfo["title"] = ""
+	end
       if TurtleRPCharacterInfo["class_token"] == nil or TurtleRPCharacterInfo["class_token"] == "" then
         local _, classToken = UnitClass("player")
         TurtleRPCharacterInfo["class_token"] = classToken
@@ -347,7 +349,7 @@ function TurtleRP.populate_interface_user_data()
   TurtleRP_AdminSB_Content1_NameInput:SetText(TurtleRPCharacterInfo["full_name"])
   TurtleRP_AdminSB_Content1_RaceInput:SetText(TurtleRPCharacterInfo["race"])
   TurtleRP_AdminSB_Content1_ClassInput:SetText(TurtleRPCharacterInfo["class"])
-  TurtleRP_AdminSB_Content1_TitleInput:SetText(TurtleRPCharacterInfo["title"])
+	TurtleRP_AdminSB_Content1_TitleInput:SetText(TurtleRPCharacterInfo["title"] or "")
   local r, g, b = TurtleRP.hex2rgb(TurtleRPCharacterInfo['class_color'])
   TurtleRP_AdminSB_Content1_ClassColorButton:SetBackdropColor(r, g, b)
   TurtleRP_AdminSB_Content1_ICScrollBox_ICInfoInput:SetText(TurtleRPCharacterInfo["ic_info"])
