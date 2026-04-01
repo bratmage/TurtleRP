@@ -679,6 +679,8 @@ end
 
 function TurtleRP.RequestCloseAdmin()
   TurtleRP.ClearAdminFocus()
+  TurtleRP.adminPendingTabSwitch = nil
+  TurtleRP.adminPendingBottomTabSwitch = nil
   if TurtleRP.HasUnsavedAdminChanges() then
     StaticPopup_Show("TTRP_ADMIN_UNSAVED")
   else
@@ -688,8 +690,9 @@ end
 
 function TurtleRP.RequestAdminTabSwitch(tabType, value)
   TurtleRP.ClearAdminFocus()
-
   if not TurtleRP.HasUnsavedAdminChanges() then
+    TurtleRP.adminPendingTabSwitch = nil
+    TurtleRP.adminPendingBottomTabSwitch = nil
     if tabType == "main" then
       TurtleRP.ApplyAdminTabClick(value)
     elseif tabType == "bottom" then
@@ -697,16 +700,13 @@ function TurtleRP.RequestAdminTabSwitch(tabType, value)
     end
     return
   end
-
   TurtleRP.adminPendingTabSwitch = nil
   TurtleRP.adminPendingBottomTabSwitch = nil
-
   if tabType == "main" then
     TurtleRP.adminPendingTabSwitch = value
   elseif tabType == "bottom" then
     TurtleRP.adminPendingBottomTabSwitch = value
   end
-
   StaticPopup_Show("TTRP_ADMIN_UNSAVED")
 end
 
@@ -819,10 +819,64 @@ function TurtleRP.save_general()
 
   TurtleRPCharacterInfo["nsfw"] = TurtleRP_AdminSB_Content1_NSFWButton:GetChecked() and "1" or "0"
 
-
   TurtleRPCharacters[UnitName("player")] = TurtleRPCharacterInfo
   TurtleRP.setCharacterIcon()
+  TurtleRP.RefreshAdminStateSnapshot()
 end
+
+function TurtleRP.save_style()
+  TurtleRPCharacterInfo['keyT'] = TurtleRP.randomchars()
+  local experience = UIDropDownMenu_GetSelectedValue(TurtleRP_AdminSB_Content1_Tab2_ExperienceDropdown)
+  TurtleRPCharacterInfo["experience"] = experience ~= nil and experience or 0
+  local walkups = UIDropDownMenu_GetSelectedValue(TurtleRP_AdminSB_Content1_Tab2_WalkupsDropdown)
+  TurtleRPCharacterInfo["walkups"] = walkups ~= nil and walkups or 0
+  local injury = UIDropDownMenu_GetSelectedValue(TurtleRP_AdminSB_Content1_Tab2_InjuryDropdown)
+  TurtleRPCharacterInfo["injury"] = injury ~= nil and injury or 0
+  local romance = UIDropDownMenu_GetSelectedValue(TurtleRP_AdminSB_Content1_Tab2_RomanceDropdown)
+  TurtleRPCharacterInfo["romance"] = romance ~= nil and romance or 0
+  local death = UIDropDownMenu_GetSelectedValue(TurtleRP_AdminSB_Content1_Tab2_DeathDropdown)
+  TurtleRPCharacterInfo["death"] = death ~= nil and death or 0
+  TurtleRPCharacters[UnitName("player")] = TurtleRPCharacterInfo
+  TurtleRP.RefreshAdminStateSnapshot()
+end
+
+function TurtleRP.save_at_a_glance()
+  TurtleRPCharacterInfo['keyT'] = TurtleRP.randomchars()
+  local aag1Text = TurtleRP_AdminSB_Content2_AtAGlance1ScrollBox_AAG1Input:GetText()
+  TurtleRP_AdminSB_Content2_AtAGlance1ScrollBox_AAG1Input:ClearFocus()
+  TurtleRPCharacterInfo["atAGlance1"] = TurtleRP.validateBeforeSaving(aag1Text)
+  local aag1TitleText = TurtleRP_AdminSB_Content2_AAG1TitleInput:GetText()
+  TurtleRP_AdminSB_Content2_AAG1TitleInput:ClearFocus()
+  TurtleRPCharacterInfo["atAGlance1Title"] = TurtleRP.validateBeforeSaving(aag1TitleText)
+  local aag2Text = TurtleRP_AdminSB_Content2_AtAGlance2ScrollBox_AAG2Input:GetText()
+  TurtleRP_AdminSB_Content2_AtAGlance2ScrollBox_AAG2Input:ClearFocus()
+  TurtleRPCharacterInfo["atAGlance2"] = TurtleRP.validateBeforeSaving(aag2Text)
+  local aag2TitleText = TurtleRP_AdminSB_Content2_AAG2TitleInput:GetText()
+  TurtleRP_AdminSB_Content2_AAG2TitleInput:ClearFocus()
+  TurtleRPCharacterInfo["atAGlance2Title"] = TurtleRP.validateBeforeSaving(aag2TitleText)
+  local aag3Text = TurtleRP_AdminSB_Content2_AtAGlance3ScrollBox_AAG3Input:GetText()
+  TurtleRP_AdminSB_Content2_AtAGlance3ScrollBox_AAG3Input:ClearFocus()
+  TurtleRPCharacterInfo["atAGlance3"] = TurtleRP.validateBeforeSaving(aag3Text)
+  local aag3TitleText = TurtleRP_AdminSB_Content2_AAG3TitleInput:GetText()
+  TurtleRP_AdminSB_Content2_AAG3TitleInput:ClearFocus()
+  TurtleRPCharacterInfo["atAGlance3Title"] = TurtleRP.validateBeforeSaving(aag3TitleText)
+
+  local pendingIcons = TurtleRP_IconSelector and TurtleRP_IconSelector.selectedIconIndex or {}
+  if pendingIcons["atAGlance1Icon"] ~= nil then
+    TurtleRPCharacterInfo["atAGlance1Icon"] = pendingIcons["atAGlance1Icon"]
+  end
+  if pendingIcons["atAGlance2Icon"] ~= nil then
+    TurtleRPCharacterInfo["atAGlance2Icon"] = pendingIcons["atAGlance2Icon"]
+  end
+  if pendingIcons["atAGlance3Icon"] ~= nil then
+    TurtleRPCharacterInfo["atAGlance3Icon"] = pendingIcons["atAGlance3Icon"]
+  end
+
+  TurtleRPCharacters[UnitName("player")] = TurtleRPCharacterInfo
+  TurtleRP.setAtAGlanceIcons()
+  TurtleRP.RefreshAdminStateSnapshot()
+end
+
 function TurtleRP.save_style()
   TurtleRPCharacterInfo['keyT'] = TurtleRP.randomchars()
   local experience = UIDropDownMenu_GetSelectedValue(TurtleRP_AdminSB_Content1_Tab2_ExperienceDropdown)
