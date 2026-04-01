@@ -279,7 +279,7 @@ function TurtleRP.BuildDirectoryResults()
     local currentTime = time()
     local showNSFW = TurtleRPSettings["show_nsfw"] == "1"
     local hideOffline = TurtleRP.hideOfflineDirectory == true
-    local searchTerm = TurtleRP_DirectoryNormalizeSearch(TurtleRP.searchTerm or "")
+	local searchTerm = TurtleRP_DirectoryNormalizeAlpha(TurtleRP.searchTerm or "")
     for playerName, profile in pairs(TurtleRPCharacters) do
         if profile and (showNSFW or profile["nsfw"] == "0" or profile["nsfw"] == "" or profile["nsfw"] == nil) then
             local row = TurtleRP_DirectoryBuildRow(playerName, profile, currentTime)
