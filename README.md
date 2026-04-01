@@ -49,7 +49,8 @@ To Do
 ### Recently Done
 
 1.3.3
--- **Added a Disable RP Color setting**
+
+- **Added a Disable RP Color setting**
 - This has been seperated into RP Names and RP Color in the settings menu now.
 - You can ALSO disable it for individual characters by opening their profile and going to the notes section. Sorry scarlet RPers, everyone complained about your dark red names.
 -- **Massive Directory Rework!**
@@ -66,7 +67,8 @@ To Do
 - Cleaned up several nil/state edge cases.
 
 1.3.2
--- **Profile Preview Button added!**
+
+- **Profile Preview Button added!**
 - While editting your profile, you may click the preview button to see a 'live' version of it without saving.
 - Pressing esc key on a textbox now properly exits the textbox entry.
 - **New Unsaved Changes warning popup when attempting to exit or esc from a menu where you can unsaved changes, instead of just silently losing everything.**
