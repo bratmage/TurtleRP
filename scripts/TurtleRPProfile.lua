@@ -61,32 +61,25 @@ end
 
 function TurtleRP.ShowOrHideProfileDetails(lastFrame, characterInfo, frame, stringToShow, overrideHide)
   local frameHidden = false
-  if characterInfo["keyM"] == nil or overrideHide == true then
+  if characterInfo["keyM"] == nil or overrideHide == true or stringToShow == nil or stringToShow == "" then
     frame:Hide()
     frameHidden = true
   else
-    if stringToShow ~= nil and stringToShow ~= "" then
-      frame:Show()
-      frame:SetText(stringToShow)
-      local currentHeight = frame:GetHeight()
-      if frame:GetStringWidth() > 265 and floor(currentHeight + 0.5) ~= 30 then
-        frame:SetHeight(30)
-      end
-      if frame:GetStringWidth() < 265 and floor(currentHeight + 0.5) == 30 then
-        frame:SetHeight(10)
-      end
-    else
-      frame:Hide()
-      frameHidden = true
+    frame:Show()
+    frame:SetText(stringToShow)
+    local currentHeight = frame:GetHeight()
+    if frame:GetStringWidth() > 265 and floor(currentHeight + 0.5) ~= 30 then
+      frame:SetHeight(30)
+    elseif frame:GetStringWidth() < 265 and floor(currentHeight + 0.5) == 30 then
+      frame:SetHeight(10)
     end
   end
   if lastFrame ~= nil then
     if frameHidden then
       frame:SetPoint("TOPLEFT", lastFrame, "BOTTOMLEFT", 0, 0)
       return lastFrame
-    else
-      frame:SetPoint("TOPLEFT", lastFrame, "BOTTOMLEFT", 0, -10)
     end
+    frame:SetPoint("TOPLEFT", lastFrame, "BOTTOMLEFT", 0, -10)
   end
   return frame
 end
