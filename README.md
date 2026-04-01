@@ -8,33 +8,22 @@ Many thanks from the team and community to those who will contribute to this add
 
 An RP addon custom-made for Vanilla WoW.
 
-For more information, visit [https://tempranova.github.io/turtlerp/](https://tempranova.github.io/turtlerp/).
+For more information, visit https://github.com/bratmage/TurtleRP.
 
-To archive from source code, use `git archive --output=TurtleRP-<v>.zip --prefix=TurtleRP/ HEAD`.
-
-## Version 1.3.3
-Recommend reading the patch notes for 1.3.2 below for the exciting stuff. This is an emergency patch the new day to break some broken stuff.
-
-### Added a Disable RP Color setting
-- This has been seperated into RP Names and RP Color in the settings menu now.
-- You can ALSO disable it for individual characters by opening their profile and going to the notes section. Sorry scarlet RPers, everyone complained about your dark red names.
-### Massive Directory Rework!
-- Almost the entire directory has been rewritten.
-- New internal sorting flow.
-- **Hide offline toggle at the botom.**
-- Live filtered results with an accurate counter on the bottom
-- Better handling for sorting as a whole.
-- Automatic database cleaning on load- I have no lag issues but please report any to me.
-### Several various "emergency" bug fixes - thank you for the feedback!
-- Fixed the emote override with | note removing names after a /e
-- Fixed login error popup when logging in without pfui
-- Added class token (blizzard_raid_colors) for when RP colors are off
-- Cleaned up several nil/state edge cases.
-
-
+## Version 1.3.4
+This is almost entirely under-the-hood stuff.
+- **Syntax errors not allowing the addon to load based on your other addons has been properly fixed. I hope.**
+- More improvements to the directory system to reduce lag.
+- Cleaned up how icon previews work in the admin panel, and the at a glance icons.
+- Some small internal improves on tooltip handling.
+- **Properly detects when you're running an outdated version now.**
+- You'll receive a message if a newer version is detected. Only sends once per session to avoid spam.
+- Removed duplicate and redundant logic all of the place. Too many cooks.
+- Improved some internal consistency to make my job easier in the future.
+- Cleaned up RP Mode stuff. Does anyone even use this feature?
 
 **Known Issues**
-- Very niche case: If you previously used both old note systems on yourself, in admin and in the saved profile, it may appear that the saved profile one has "overwritten" the old notes. The old notes are still saved in your profile lua. I have a data migration set up to sync everything, but if both fields were filled, it does not "replace" one, only changes which is displayed. You may want to manually clean it up if you really care.
+- (1.3.2) Very niche case: If you previously used both old note systems on yourself, in admin and in the saved profile, it may appear that the saved profile one has "overwritten" the old notes. The old notes are still saved in your profile lua. I have a data migration set up to sync everything, but if both fields were filled, it does not "replace" one, only changes which is displayed. You may want to manually clean it up if you really care.
 
 
 ---
@@ -42,7 +31,7 @@ Recommend reading the patch notes for 1.3.2 below for the exciting stuff. This i
 
 Bugs
 
-- Profile Switching causing issues. System rewrite likely for the future.
+- Profile Switching causing issues. Full profile rework is next.
 - Some icons require you to search, rather than appear on the scroll list.
 
 Minor Bugs
@@ -58,6 +47,23 @@ To Do
 ---
 
 ### Recently Done
+
+1.3.3
+-- **Added a Disable RP Color setting**
+- This has been seperated into RP Names and RP Color in the settings menu now.
+- You can ALSO disable it for individual characters by opening their profile and going to the notes section. Sorry scarlet RPers, everyone complained about your dark red names.
+-- **Massive Directory Rework!**
+- Almost the entire directory has been rewritten.
+- New internal sorting flow.
+- **Hide offline toggle at the botom.**
+- Live filtered results with an accurate counter on the bottom
+- Better handling for sorting as a whole.
+- Automatic database cleaning on load- I have no lag issues but please report any to me.
+-- **Several various "emergency" bug fixes - thank you for the feedback!**
+- Fixed the emote override with | note removing names after a /e
+- Fixed login error popup when logging in without pfui
+- Added class token (blizzard_raid_colors) for when RP colors are off
+- Cleaned up several nil/state edge cases.
 
 1.3.2
 -- **Profile Preview Button added!**
