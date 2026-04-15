@@ -2,7 +2,7 @@
 
   <Frame name="TurtleRP_MinimapIcon" movable="true" toplevel="true" enableMouse="true">
     <Size>
-      <AbsDimension x="25" y="25" />
+      <AbsDimension x="32" y="32" />
     </Size>
     <Anchors>
       <Anchor point="CENTER" relativeTo="MinimapCluster" relativePoint="CENTER">
@@ -11,55 +11,88 @@
         </Offset>
       </Anchor>
     </Anchors>
+
     <Frames>
-      <Button name="$parent_OpenAdmin" movable="true" enableMouse="true">
-        <Size x="25" y="25"/>
+      <Button name="$parent_OpenAdmin" enableMouse="true">
+        <Size x="32" y="32"/>
         <Anchors>
           <Anchor point="CENTER" relativeTo="$parent" relativePoint="CENTER">
             <Offset>
-              <AbsDimension x="-1" y="25" />
+              <AbsDimension x="0" y="0" />
             </Offset>
           </Anchor>
         </Anchors>
+
         <Layers>
           <Layer level="BACKGROUND">
             <Texture name="$parentEye" file="Interface\Addons\TurtleRP\images\wizardturtle-round">
-              <Size x="13" y="13"/>
+              <Size x="16" y="16"/>
               <Anchors>
                 <Anchor point="CENTER">
-                  <Offset x="-2" y="2"/>
+                  <Offset x="0" y="0"/>
                 </Anchor>
               </Anchors>
             </Texture>
           </Layer>
+
           <Layer level="OVERLAY">
             <Texture file="Interface\Minimap\MiniMap-TrackingBorder">
-              <Size x="37" y="37"/>
+              <Size x="53" y="53"/>
               <Anchors>
-                <Anchor point="TOPLEFT"/>
+                <Anchor point="TOPLEFT">
+                  <Offset>
+                    <AbsDimension x="0" y="0" />
+                  </Offset>
+                </Anchor>
               </Anchors>
             </Texture>
           </Layer>
         </Layers>
+
         <HighlightTexture alphaMode="ADD" file="Interface\Minimap\UI-Minimap-ZoomButton-Highlight"/>
+
         <Scripts>
           <OnClick>
-            if TurtleRP.movingMinimapButton == nil then
+            if arg1 == "LeftButton" and not IsControlKeyDown() and TurtleRP.movingMinimapButton == nil then
               TurtleRP.OpenAdmin()
             end
           </OnClick>
+
+          <OnEnter>
+            GameTooltip:SetOwner(this, "ANCHOR_LEFT")
+            GameTooltip:SetText("TurtleRP")
+            GameTooltip:AddLine("Left Click: Open settings", 1, 1, 1)
+            GameTooltip:AddLine("Ctrl + Left Click + Drag: Move icon", 0.8, 0.8, 0.8)
+            GameTooltip:Show()
+          </OnEnter>
+
+          <OnLeave>
+            GameTooltip:Hide()
+          </OnLeave>
+
           <OnMouseDown>
-            local newLeft = this:GetLeft()
-            local newTop = this:GetTop()
-            TurtleRP.movingMinimapButton = newLeft * newTop
-            TurtleRP_MinimapIcon:StartMoving()
+            if arg1 == "LeftButton" and IsControlKeyDown() then
+              local newLeft = TurtleRP_MinimapIcon:GetLeft()
+              local newTop = TurtleRP_MinimapIcon:GetTop()
+              TurtleRP.movingMinimapButton = newLeft * newTop
+              TurtleRP_MinimapIcon:StartMoving()
+            else
+              TurtleRP.movingMinimapButton = nil
+            end
           </OnMouseDown>
+
           <OnMouseUp>
-            TurtleRP_MinimapIcon:StopMovingOrSizing()
-            local newLeft = this:GetLeft()
-            local newTop = this:GetTop()
-            if TurtleRP.movingMinimapButton ~= (newLeft * newTop) then
-              TurtleRP.movingMinimapButton = true
+            if arg1 == "LeftButton" and IsControlKeyDown() then
+              TurtleRP_MinimapIcon:StopMovingOrSizing()
+              local newLeft = TurtleRP_MinimapIcon:GetLeft()
+              local newTop = TurtleRP_MinimapIcon:GetTop()
+
+              if TurtleRP.movingMinimapButton ~= (newLeft * newTop) then
+                TurtleRP.movingMinimapButton = true
+                TurtleRP.SaveMinimapIconPosition()
+              else
+                TurtleRP.movingMinimapButton = nil
+              end
             else
               TurtleRP.movingMinimapButton = nil
             end
