@@ -1,4 +1,4 @@
-## Turtle RP 2026
+## Turtle RP 2
 
 Turtle's RP scene has been an integral party of the community since the earliest days of the network. This addon was forked and made official after numerous community requests for assistance moderating and growing the roleplay community.
 
@@ -10,7 +10,97 @@ An RP addon custom-made for Vanilla WoW.
 
 For more information, visit https://github.com/bratmage/TurtleRP.
 
-## Version 1.3.4
+## Version 2.0.0
+Thank you for all of the lovely support and feedback as I've worked on this. Viva la Turtle 🐢
+Please note that this *is* a forced update, though I have made as many attempts as I can to future proof it so that there is never another required update again- maybe at 3.0!
+
+### Account-wide Profiles
+- Character profiles now use a new account-wide profile system instead of the old per-character slot model.
+- Instant Profile switching!!
+- Added a profile management tab. Features:
+-- Profile select dropdown
+-- New profile, profile duplication, profile deletion, profile renaming buttons
+-- Import/Export profiles buttons as codes. Use this for backups or.. whatever else. Idk it was requested.
+- Existing legacy profiles are automatically migrated to the new system
+- If using multiple of the previous profiles, they will all be migrated as seperate profiles. Might wanna rename them though.
+### Pet Profiles
+- Pet Profile support for Hunter & Warlock pets. No companions due to vanilla 1.12 limitations.
+- Not SPECIFICALLY required to have them so you MIGHT be able to get some weird gimmick but like.. Companions dont have a GUID lol.
+- Target a pet and go to the new profile tab, then to the pet tab on the bottom.
+- Create pet profiles, assign them to multiple pets, rename the profiles, delete them, same import and export feature. Yay.
+- Pets have their own profiles, descriptions, at a glance, tooltips, and targetting windows.
+### Alt-Identifier for Chat
+- Optional feature to set a custom identifier prefix and enable it for sleected chat types and channels.
+- Might've seen someone in /rp talking with (Takoy) every time they speak? Yeah, this is that for everyone. 
+- On the profiles tab. 
+- Supports Guild, Officer, Party, Raid, Yell, and selected numbered channels. Certain exclusions are present, however.
+- Includes an otion to automatically disable the identifier when it matches your current character name.
+### Faction Identity!
+- Added a Faction selection to profiles.
+- Added faction visuals in the profile, tooltip, and world map markets.
+- Currently 5 fations: Neutral, Alliance, Horde, Scarlet, and Scourge.
+- Small icon next to faction on the profile editting page to see how your icon appears on the map.
+- IC/OOC map display works with this faction system, too! Go dark grey when you're OOC.
+### Icon System Expansions!
+- Around 3,500 icons now! Pretty much every icon in Turtle!
+- Added an alias-aware icon searching system. Got an item you like the icon of, but don't know what the icon is called? You can now search for the name of that item if you want.
+- Icon selection window much bigger. And laggier. And no longer has a 200 icon limit. And it's laggy. So slow. Sorry.
+- Icon additions are going to be possible going forward without breaking everyone else's addons. Yay future-proofing!
+### Guild Presentation
+- Added a Guild Override field so profiles can display a custom guild tag in profile and tooltip.
+- Added support for marking your actual guild as IC or OOC membership.
+### Target Frame & Current Mood/Status
+- Added a short "currently" status line to the target display.
+- When targetting yourself, this can be edited directly on the frame.
+- Other players see it when they target you. Good for mood, health, etc!
+### Description Upgrades
+- Link support has been added to the description tab. Add a custom button to link. Art, music, carrd, etc! Be creative!
+-- Note that linking to NSFW content on your profile violates ToS, even if profile is marked as NSFW.
+- Description formatted expanded and polished a bit. Actual line breaks now, yay!
+### New RP Preference Options
+- Added a new Combat selection to your rp preference tab.
+- Expanded options for the others as well.
+- If you select do not show, it will actually not show on your profile instead of just saying "Do not show". That was a weird one. Why have both no and do not show? 
+### Tooltip Controls
+- Added asetting to disable all TurtleRP Tooltips.
+- Added a setting to automatically disable TurtleRP tooltips in battlegrounds. Didn't test in the arena but the others work!
+- You can now also **hold the Alt key** to temporarily supress the TurtleRP tooltip. Cool!
+### Map Improvements
+- Left click a map icon to view a profile, or right click to open the chat menu. Neat.
+- If two+ icons are overlapping, right click will let you pick which you want to select.
+### Fixes and Polish
+-Tons of things I noticed that I didn't even write down. Whatever.
+- Actual addon version detection and outdated-version warnings.
+- Fixed multiple tooltip issues, like some lingering/duplicate visuals and stability. Much more consistent now 
+- Titles field is much, much longer. Enjoy.
+- In preparation for the above, there's a ton of text wraps built into the tooltips now so they dont get as wide as your screen.
+- Also wraps on profiles. So pretty and readable..
+- Status bars on tooltips that match class_color!
+- Fixed several frame/state issues around profile switching, admin UI behavior, and save-state handling.
+- Fixed a ton of nil/blank data cases.
+- Minimap Icon is much more stable now too.
+- General hardening and cleanup. 
+- Lots of little easter eggs!
+
+---
+### To Do
+
+Bugs
+- There will CERTAINLY be bugs with such a massive update. Please report them on github, or on discord.
+
+Minor Bugs
+- Color pick is sometimes connected to other color picker instances
+- Dev: There are pretty much no devnotes in any of my commitments besides my notes in the actual code. If you had anything you wanted to contribute anyways, so much of the base addon has changed that it probably isn't even compatible. lol. sorry. Message me on discord though!
+
+To Do
+- Companions profiles, if I can ever figure them out.
+- Color compatability for descriptions.
+
+---
+
+### Recently Done
+
+1.3.4
 This is almost entirely under-the-hood stuff.
 - **Syntax errors not allowing the addon to load based on your other addons has been properly fixed. I hope.**
 - More improvements to the directory system to reduce lag.
@@ -24,29 +114,6 @@ This is almost entirely under-the-hood stuff.
 
 **Known Issues**
 - (1.3.2) Very niche case: If you previously used both old note systems on yourself, in admin and in the saved profile, it may appear that the saved profile one has "overwritten" the old notes. The old notes are still saved in your profile lua. I have a data migration set up to sync everything, but if both fields were filled, it does not "replace" one, only changes which is displayed. You may want to manually clean it up if you really care.
-
-
----
-### To Do
-
-Bugs
-
-- Profile Switching causing issues. Full profile rework is next.
-- Some icons require you to search, rather than appear on the scroll list.
-
-Minor Bugs
-
-- Color pick is sometimes connected to other color picker instances
-
-To Do
-
-- More icons (always.)
-- Revamp of the multiple profiles system, including a profile tab and integration of Incognito
-- Changes to the directory search to display results numbers rather than total numbers. Maybe add a counter of TRPs in a zone on the map. If you like XML please hmu 
-
----
-
-### Recently Done
 
 1.3.3
 
