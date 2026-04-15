@@ -30,6 +30,9 @@ DR
 local lastRequestType = nil
 local lastPlayerName = nil
 local timeOfLastSend = time()
+local lastMouseoverKey = nil
+local lastMouseoverRequestAt = 0
+local mouseoverRequestCooldown = 2
 local rpRequestQueue = {}
 local rpRequestLookup = {}
 local rpSeenSpeakers = {}
@@ -54,6 +57,23 @@ function TurtleRP.mouseover_and_target_events()
         TurtleRP_Target:Hide()
         TurtleRP.sendRequestForData("T", UnitName("target"))
       end
+		elseif TurtleRP.IsOwnedPetUnit and TurtleRP.IsOwnedPetUnit("target") then
+		  local localPetProfile = nil
+		  if TurtleRP.GetPetProfileFromUnit then
+			local localProfile = TurtleRP.GetPetProfileFromUnit("target")
+			localPetProfile = localProfile
+		  end
+
+		  local petCommKey = TurtleRP.GetPetCommKeyFromUnit and TurtleRP.GetPetCommKeyFromUnit("target") or nil
+
+		  if localPetProfile then
+			TurtleRP.buildPetTargetFrame(localPetProfile)
+		  elseif petCommKey then
+			TurtleRP_Target:Hide()
+			TurtleRP.sendRequestForData("PT", petCommKey)
+		  else
+			TurtleRP_Target:Hide()
+		  end
     else
       TurtleRP_Target:Hide()
     end
@@ -65,6 +85,15 @@ function TurtleRP.mouseover_and_target_events()
   TurtleRPMouseoverFrame:SetScript("OnEvent", function()
     if UnitIsPlayer("mouseover") then
       TurtleRP.sendRequestForData("M", UnitName("mouseover"))
+    elseif TurtleRP.IsOwnedPetUnit and TurtleRP.IsOwnedPetUnit("mouseover") then
+      local petCommKey = TurtleRP.GetPetCommKeyFromUnit and TurtleRP.GetPetCommKeyFromUnit("mouseover") or nil
+      if petCommKey then
+        TurtleRP.lastTooltipPetKey = petCommKey
+        TurtleRP.sendRequestForData("PM", petCommKey)
+        if TurtleRPPetCache and TurtleRPPetCache[petCommKey] then
+          TurtleRP.buildPetTooltip("mouseover", petCommKey)
+        end
+      end
     end
   end)
 
@@ -74,9 +103,12 @@ function TurtleRP.mouseover_and_target_events()
     if defaultTargetFrameFunction then
       defaultTargetFrameFunction()
     end
+
     if UnitName("target") == UnitName("player") then
       TurtleRP.buildTooltip(UnitName("player"), "target")
-    end
+	elseif TurtleRP.IsOwnedPetUnit and TurtleRP.IsOwnedPetUnit("target") then
+	  TurtleRP.buildPetTooltip("target")
+	end
   end)
 end
 
@@ -140,82 +172,114 @@ function TurtleRP.checkTTRPChannel()
 end
 
 function TurtleRP.communication_events()
-    if not TurtleRP.rpQueueProcessorStarted then
-        TurtleRP.StartRPRequestQueueProcessor()
-        TurtleRP.rpQueueProcessorStarted = true
-    end
-  TurtleRP_Target_DescriptionButton:SetScript("OnClick", function()
-    TurtleRP.OpenProfile()
-    if UnitName("target") == UnitName("player") then
-      TurtleRP.buildDescription(UnitName("player"))
-    else
-      TurtleRP.sendRequestForData("D", UnitName("target"))
-    end
-  end)
-  local CheckMessages = CreateFrame("Frame", "TurtleRPMessageScanner")
-  CheckMessages:RegisterEvent("CHAT_MSG_CHANNEL")
- CheckMessages:SetScript("OnEvent", function()
-    if event == "CHAT_MSG_CHANNEL" then
-        local channelName = string.lower(arg9 or "")
-        local sender = arg2
-        if channelName == string.lower(TurtleRP.channelName) then
-            TurtleRP.checkChatMessage(TurtleRP.DrunkDecode(arg1), sender)
-        elseif channelName == "rp" then
-			local dash = string.find(sender or "", "-")
-			if dash then
-				sender = string.sub(sender, 1, dash - 1)
-			end
-			rpSeenSpeakers[sender] = true
-			TurtleRP.QueueRPProfileRequest(sender)
-		end
-    end
-end)
+    TurtleRP_Target_DescriptionButton:SetScript("OnClick", function()
+        if UnitIsPlayer("target") then
+            TurtleRP.OpenProfile()
+            if UnitName("target") == UnitName("player") then
+                TurtleRP.buildDescription(UnitName("player"))
+            else
+                TurtleRP.sendRequestForData("D", UnitName("target"))
+            end
+            return
+        end
+        if TurtleRP.IsOwnedPetUnit and TurtleRP.IsOwnedPetUnit("target") then
+            local localPetProfile = TurtleRP.GetPetProfileFromUnit and TurtleRP.GetPetProfileFromUnit("target") or nil
+            local petUID = TurtleRP.GetPetUID and TurtleRP.GetPetUID("target") or nil
 
+            if localPetProfile and petUID then
+                TurtleRP.OpenPetProfile(petUID, "description")
+            else
+                local petCommKey = TurtleRP.GetPetCommKeyFromUnit and TurtleRP.GetPetCommKeyFromUnit("target") or nil
+                if petCommKey then
+                    TurtleRP.showDescription = petCommKey
+                    TurtleRP.sendRequestForData("PD", petCommKey)
+                end
+            end
+        end
+    end)
+    local CheckMessages = CreateFrame("Frame", "TurtleRPMessageScanner")
+    CheckMessages:RegisterEvent("CHAT_MSG_CHANNEL")
+    CheckMessages:SetScript("OnEvent", function()
+        if event == "CHAT_MSG_CHANNEL" then
+            local channelName = string.lower(arg9 or "")
+            local sender = arg2
+            if channelName == string.lower(TurtleRP.channelName) then
+                TurtleRP.checkChatMessage(TurtleRP.DrunkDecode(arg1), sender)
+            end
+        end
+    end)
 end
 
 ----
 -- Player communication
 ----
 
-function TurtleRP.sendRequestForData(requestType, playerName)
-  if not TurtleRP.canChat() then
+function TurtleRP.sendRequestForData(requestType, targetKey)
+  if not TurtleRP.canChat() or not targetKey or targetKey == "" then
     return
   end
-  if timeOfLastSend < (time() - 2) or lastRequestType ~= requestType then
+  if timeOfLastSend < (time() - 1) or lastRequestType ~= requestType or lastPlayerName ~= targetKey then
     timeOfLastSend = time()
     lastRequestType = requestType
-    lastPlayerName = playerName
-    if TurtleRPQueryablePlayers[playerName] ~= nil or TurtleRPCharacters[playerName] ~= nil then
-      if TurtleRPCharacters[playerName] ~= nil and TurtleRPCharacters[playerName]['key' .. requestType] ~= nil then
-        local currentKey = TurtleRPCharacters[playerName]['key' .. requestType]
-        TurtleRP.ttrpChatSend(requestType .. ':' .. playerName .. '~' .. currentKey)
-        TurtleRP.displayData(requestType, playerName)
+    lastPlayerName = targetKey
+    if string.sub(requestType, 1, 1) == "P" then
+      local petCache = TurtleRPPetCache and TurtleRPPetCache[targetKey] or nil
+      if petCache and petCache["key" .. string.sub(requestType, 2, 2)] ~= nil then
+        TurtleRP.ttrpChatSend(requestType .. ':' .. targetKey .. '~' .. petCache["key" .. string.sub(requestType, 2, 2)])
+        TurtleRP.displayData(requestType, targetKey)
       else
-        TurtleRP.ttrpChatSend(requestType .. ':' .. playerName .. '~NO_KEY')
+        TurtleRP.ttrpChatSend(requestType .. ':' .. targetKey .. '~NO_KEY')
+      end
+    else
+      if TurtleRPQueryablePlayers[targetKey] ~= nil or TurtleRPCharacters[targetKey] ~= nil then
+        if TurtleRPCharacters[targetKey] ~= nil and TurtleRPCharacters[targetKey]['key' .. requestType] ~= nil then
+          local currentKey = TurtleRPCharacters[targetKey]['key' .. requestType]
+          TurtleRP.ttrpChatSend(requestType .. ':' .. targetKey .. '~' .. currentKey)
+          TurtleRP.displayData(requestType, targetKey)
+        else
+          TurtleRP.ttrpChatSend(requestType .. ':' .. targetKey .. '~NO_KEY')
+        end
       end
     end
   end
 end
 
-function TurtleRP.checkChatMessage(msg, playerName)
+function TurtleRP.checkChatMessage(msg, senderName)
   local colonStart, colonEnd = string.find(msg, ':')
   if colonStart then
     local dataPrefix = string.sub(msg, 1, colonEnd - 1)
     local tildeStart, tildeEnd = string.find(msg, '~')
-    if tildeStart then
-      local playerNameFromString = string.sub(msg, colonEnd + 1, tildeEnd - 1)
-      if playerNameFromString == UnitName("player") then
-        if TurtleRP.canChat() and TurtleRP.checkUniqueKey(dataPrefix, msg) ~= true then
-          TurtleRP.sendData(dataPrefix)
-        end
-      else
-        TurtleRP.recieveAndStoreData(dataPrefix, playerName, msg)
+    local targetKeyFromString
+    local isForMe = nil
+    local isResponse
+    if not tildeStart or tildeStart <= colonEnd then
+      return
+    end
+    targetKeyFromString = string.sub(msg, colonEnd + 1, tildeEnd - 1)
+    if not targetKeyFromString or targetKeyFromString == "" then
+      return
+    end
+    if string.sub(dataPrefix, 1, 1) == "P" then
+      if TurtleRP.GetLocalPetProfileForCommKey and TurtleRP.GetLocalPetProfileForCommKey(targetKeyFromString) then
+        isForMe = true
+      end
+    else
+      if targetKeyFromString == UnitName("player") then
+        isForMe = true
+      end
+    end
+    isResponse = string.sub(dataPrefix, -1) == "R"
+    if isResponse then
+      TurtleRP.recieveAndStoreData(dataPrefix, senderName, msg, targetKeyFromString)
+    elseif isForMe then
+      if TurtleRP.canChat() and TurtleRP.checkUniqueKey(dataPrefix, msg) ~= true then
+        TurtleRP.sendData(dataPrefix, targetKeyFromString)
       end
     end
   else
     local firstLetter = string.sub(msg, 1, 1)
     if firstLetter == "P" or firstLetter == "A" then
-      TurtleRP.recievePingInformation(playerName, msg)
+      TurtleRP.recievePingInformation(senderName, msg)
     end
   end
 end
@@ -224,11 +288,28 @@ function TurtleRP.checkUniqueKey(dataPrefix, msg)
   local keyValid = false
   local dataFromString = TurtleRP.getDataFromString(msg)
   local keyData = dataFromString[2]
-  if keyData ~= "NO_KEY" then
-    if keyData == TurtleRPCharacterInfo["key" .. dataPrefix] then
-      keyValid = true
-    end
+  if keyData == "NO_KEY" then
+    return false
   end
+  if string.sub(dataPrefix, 1, 1) == "P" then
+  local petProfile = nil
+  local targetKey = nil
+  local _, _, extractedKey = string.find(msg, "^[^:]+:([^~]+)~")
+  targetKey = extractedKey
+
+  if TurtleRP.GetLocalPetProfileForCommKey then
+    petProfile = TurtleRP.GetLocalPetProfileForCommKey(targetKey)
+  end
+
+  local logicalPrefix = string.sub(dataPrefix, 2, 2)
+  if petProfile and keyData == petProfile["key" .. logicalPrefix] then
+    keyValid = true
+  end
+	else
+	  if keyData == TurtleRPCharacterInfo["key" .. dataPrefix] then
+		keyValid = true
+	  end
+	end
   return keyValid
 end
 
@@ -240,31 +321,53 @@ function TurtleRP.getDataFromString(msg)
   return splitArray
 end
 
-function sendChunks(dataPrefix, stringChunks)
+function sendChunks(dataPrefix, targetKey, stringChunks, uniqueKey)
   local totalToSend = table.getn(stringChunks)
   for i in stringChunks do
-    TurtleRP.ttrpChatSend(dataPrefix .. 'R:' .. "p" .. "~" .. TurtleRPCharacterInfo["key" .. dataPrefix] .. '~' .. i .. '~' .. totalToSend .. '~' .. stringChunks[i])
+    TurtleRP.ttrpChatSend(dataPrefix .. 'R:' .. targetKey .. "~" .. uniqueKey .. '~' .. i .. '~' .. totalToSend .. '~' .. stringChunks[i])
   end
 end
 
-function TurtleRP.sendData(dataPrefix)
-  local stringChunks = TurtleRP.splitByChunk(TurtleRP.buildDataStringToSend(dataPrefix), 230)
-  if dataPrefix == "M" or dataPrefix == "T" or dataPrefix == "D" then
-    sendChunks(dataPrefix, stringChunks)
+function TurtleRP.GetCommDataSource(dataPrefix, targetKey)
+  if string.sub(dataPrefix, 1, 1) == "P" then
+    local petProfile = TurtleRP.GetLocalPetProfileForCommKey and TurtleRP.GetLocalPetProfileForCommKey(targetKey) or nil
+    return petProfile
   end
+  return TurtleRPCharacterInfo
 end
 
-function TurtleRP.buildDataStringToSend(dataPrefix)
+function TurtleRP.GetLogicalCommPrefix(dataPrefix)
+  if string.sub(dataPrefix, 1, 1) == "P" then
+    return string.sub(dataPrefix, 2, 2)
+  end
+  return dataPrefix
+end
+
+function TurtleRP.sendData(dataPrefix, targetKey)
+  local sourceData = TurtleRP.GetCommDataSource(dataPrefix, targetKey)
+  local logicalPrefix = TurtleRP.GetLogicalCommPrefix(dataPrefix)
+  if not sourceData or not sourceData["key" .. logicalPrefix] then
+    return
+  end
+  local stringChunks = TurtleRP.splitByChunk(TurtleRP.buildDataStringToSend(dataPrefix, sourceData), 230)
+  sendChunks(dataPrefix, targetKey, stringChunks, sourceData["key" .. logicalPrefix])
+end
+
+function TurtleRP.buildDataStringToSend(dataPrefix, sourceData)
   local dataToBuild = TurtleRP.dataKeys(dataPrefix)
   local stringToSend = ""
+  local logicalSource = sourceData or TurtleRPCharacterInfo
   for i, dataRef in ipairs(dataToBuild) do
-    if i ~= 1 then -- don't send key again
-      local thisData = TurtleRPCharacterInfo[dataRef]
-      if dataRef == 'description' then
-        thisData = gsub(TurtleRPCharacterInfo["description"], "%\n", "@N")
+    if i ~= 1 then
+      local thisData = logicalSource[dataRef]
+      if dataRef == "description" then
+        thisData = gsub(logicalSource["description"] or "", "%\n", "@N")
         if thisData == "" then
           thisData = " "
         end
+      end
+      if thisData == nil then
+        thisData = ""
       end
       local frontDelimiter = i == 2 and "" or "~"
       stringToSend = stringToSend .. frontDelimiter .. thisData
@@ -274,79 +377,203 @@ function TurtleRP.buildDataStringToSend(dataPrefix)
 end
 
 local dataKeys = {
-    ["M"] = {"keyM", "icon", "full_name", "race", "class", "class_color", "ooc_info", "ic_info", "currently_ic", "ooc_pronouns", "ic_pronouns", "nsfw", "title", "class_token"},
-    ["T"] = {"keyT", "atAGlance1", "atAGlance1Title", "atAGlance1Icon", "atAGlance2", "atAGlance2Title", "atAGlance2Icon", "atAGlance3", "atAGlance3Title", "atAGlance3Icon", "experience", "walkups", "injury", "romance", "death"},
-    ["D"] = {"keyD", "description"}
+	["M"] = {
+		"keyM",
+		"icon",
+		"full_name",
+		"race",
+		"class",
+		"class_color",
+		"ooc_info",
+		"ic_info",
+		"currently_ic",
+		"ooc_pronouns",
+		"ic_pronouns",
+		"nsfw",
+		"title",
+		"class_token",
+		"faction",
+		"guild_override",
+		"guild_ic",
+		"guild_ooc"
+	},
+	["T"] = {
+		"keyT",
+		"atAGlance1",
+		"atAGlance1Title",
+		"atAGlance1Icon",
+		"atAGlance2",
+		"atAGlance2Title",
+		"atAGlance2Icon",
+		"atAGlance3",
+		"atAGlance3Title",
+		"atAGlance3Icon",
+		"experience",
+		"walkups",
+		"combat",
+		"injury",
+		"romance",
+		"death",
+		"currently"
+	},
+	["D"] = {"keyD", "description", "description_link_text", "description_link"},
+
+    ["PM"] = {
+        "keyM",
+        "icon",
+        "name",
+        "species",
+        "level",
+        "info",
+        "pronouns"
+    },
+    ["PT"] = {
+        "keyT",
+        "atAGlance1",
+        "atAGlance1Title",
+        "atAGlance1Icon",
+        "atAGlance2",
+        "atAGlance2Title",
+        "atAGlance2Icon",
+        "atAGlance3",
+        "atAGlance3Title",
+        "atAGlance3Icon",
+        "name",
+        "species",
+        "level"
+    },
+    ["PD"] = {"keyD", "description"}
 }
+
 dataKeys["MR"], dataKeys["TR"], dataKeys["DR"] = dataKeys["M"], dataKeys["T"], dataKeys["D"]
+dataKeys["PMR"], dataKeys["PTR"], dataKeys["PDR"] = dataKeys["PM"], dataKeys["PT"], dataKeys["PD"]
+
 local emptyDataKeys = {}
+
 function TurtleRP.dataKeys(dataPrefix)
     return dataKeys[dataPrefix] or emptyDataKeys
 end
 
 function TurtleRP.storeChunkedData(dataPrefix, playerName, stringData)
-  local readyToProcess = false
-  if stringData[3] == "1" then -- if this is the first message
-    TurtleRPCharacters[playerName]["temp" .. dataPrefix] = ""
-  end
-  if stringData[3] == stringData[4] then -- if this is the last message
-    readyToProcess = true
-  end
-  -- Process into temp holder
+  local tempKey = "temp" .. dataPrefix
+  local chunkIndex = tonumber(stringData[3] or "")
+  local chunkTotal = tonumber(stringData[4] or "")
   local totalReceived = table.getn(stringData)
   local justDataString = ""
-  if TurtleRPCharacters[playerName]["temp" .. dataPrefix] == "" then
-    justDataString = stringData[2] .. "~" -- adding key back
-  end
-  for i=5, totalReceived do
-    justDataString = justDataString .. stringData[i] .. (i == totalReceived and "" or "~")
-  end
-  TurtleRPCharacters[playerName]["temp" .. dataPrefix] = TurtleRPCharacters[playerName]["temp" .. dataPrefix] .. justDataString
+  local i
 
-  return readyToProcess
-end
-
-local processSplitTable = {}
-function TurtleRP.processAndStoreData(dataPrefix, playerName)
-  local strs = splitString(TurtleRPCharacters[playerName]["temp" .. dataPrefix], "~", processSplitTable)
-  local dataToSave = TurtleRP.dataKeys(dataPrefix)
-  for i, dataRef in ipairs(dataToSave) do
-    if strs[i] ~= nil then
-      TurtleRPCharacters[playerName][dataRef] = strs[i]
-    else
-      TurtleRPCharacters[playerName][dataRef] = ""
-    end
-  end
-end
-
-function TurtleRP.recieveAndStoreData(dataPrefix, playerName, msg)
-  local stringData = TurtleRP.getDataFromString(msg) -- 1 is playername (not used anymore), 2 is key, 3 is i, 4 is total
   if TurtleRPCharacters[playerName] == nil then
     TurtleRPCharacters[playerName] = {}
   end
-    if dataPrefix == "MR" then
-    local readyToProcess = TurtleRP.storeChunkedData(dataPrefix, playerName, stringData)
-    if readyToProcess then
-      TurtleRP.processAndStoreData(dataPrefix, playerName)
-      TurtleRP.RefreshDirectoryIfVisible()
-      TurtleRP.displayData(dataPrefix, playerName)
-      if playerName == UnitName("target") or playerName == UnitName("mouseover") then
-        TurtleRP.SetTargetNameFrameWidths(playerName)
+  if TurtleRPCharacters[playerName][tempKey] == nil then
+    TurtleRPCharacters[playerName][tempKey] = ""
+  end
+  if not chunkIndex or not chunkTotal or chunkIndex < 1 or chunkTotal < 1 or chunkIndex > chunkTotal then
+    return false
+  end
+  if chunkIndex == 1 then
+    TurtleRPCharacters[playerName][tempKey] = ""
+  end
+  if TurtleRPCharacters[playerName][tempKey] == "" and stringData[2] ~= nil then
+    justDataString = stringData[2] .. "~"
+  end
+  for i = 5, totalReceived do
+    justDataString = justDataString .. (stringData[i] or "") .. (i == totalReceived and "" or "~")
+  end
+  TurtleRPCharacters[playerName][tempKey] = TurtleRPCharacters[playerName][tempKey] .. justDataString
+  return chunkIndex == chunkTotal
+end
+
+local processSplitTable = {}
+function TurtleRP.processAndStoreData(dataPrefix, storageTable, storageKey)
+  local dataToSave = TurtleRP.dataKeys(dataPrefix)
+  local tempKey = "temp" .. dataPrefix
+  local rawData
+  local strs
+  local i, dataRef
+  if not storageTable or not storageKey or not storageTable[storageKey] then
+    return false
+  end
+  if not dataToSave or table.getn(dataToSave) == 0 then
+    return false
+  end
+  rawData = storageTable[storageKey][tempKey]
+  if rawData == nil or rawData == "" then
+    return false
+  end
+  strs = splitString(rawData, "~", processSplitTable)
+  for i, dataRef in ipairs(dataToSave) do
+    if strs[i] ~= nil then
+      storageTable[storageKey][dataRef] = strs[i]
+    else
+      storageTable[storageKey][dataRef] = ""
+    end
+  end
+  return true
+end
+
+function TurtleRP.recieveAndStoreData(dataPrefix, senderName, msg, targetKey)
+  local stringData = TurtleRP.getDataFromString(msg)
+  local storageTable = nil
+  local storageKey = nil
+  if string.sub(dataPrefix, 1, 1) == "P" then
+    if TurtleRPPetCache == nil then
+      TurtleRPPetCache = {}
+    end
+    storageTable = TurtleRPPetCache
+    storageKey = targetKey
+    if storageTable[storageKey] == nil then
+      storageTable[storageKey] = {}
+    end
+    storageTable[storageKey]["owner_name"] = senderName
+  else
+    storageTable = TurtleRPCharacters
+    storageKey = senderName
+    if storageTable[storageKey] == nil then
+      storageTable[storageKey] = {}
+    end
+  end
+
+  if dataPrefix == "MR" or dataPrefix == "TR" or dataPrefix == "DR" or dataPrefix == "PMR" or dataPrefix == "PTR" or dataPrefix == "PDR" then
+    local readyToProcess = false
+    local processed = false
+    local tempKey = "temp" .. dataPrefix
+    local chunkIndex = tonumber(stringData[3] or "")
+    local chunkTotal = tonumber(stringData[4] or "")
+    local totalReceived = table.getn(stringData)
+    local justDataString = ""
+    local i
+
+    if storageTable[storageKey][tempKey] == nil then
+      storageTable[storageKey][tempKey] = ""
+    end
+
+    if chunkIndex and chunkTotal and chunkIndex >= 1 and chunkTotal >= 1 and chunkIndex <= chunkTotal then
+      if string.sub(dataPrefix, 1, 1) == "P" then
+        if chunkIndex == 1 then
+          storageTable[storageKey][tempKey] = ""
+        end
+        if storageTable[storageKey][tempKey] == "" and stringData[2] ~= nil then
+          storageTable[storageKey][tempKey] = stringData[2] .. "~"
+        end
+        for i = 5, totalReceived do
+          justDataString = justDataString .. (stringData[i] or "") .. (i == totalReceived and "" or "~")
+        end
+        storageTable[storageKey][tempKey] = storageTable[storageKey][tempKey] .. justDataString
+        readyToProcess = (chunkIndex == chunkTotal)
+      else
+        readyToProcess = TurtleRP.storeChunkedData(dataPrefix, storageKey, stringData)
       end
     end
-  end
-  if dataPrefix == "TR" then
-    local readyToProcess = TurtleRP.storeChunkedData(dataPrefix, playerName, stringData)
+
     if readyToProcess then
-      TurtleRP.processAndStoreData(dataPrefix, playerName)
-      TurtleRP.displayData(dataPrefix, playerName)
-    end
-  end
-  if dataPrefix == "DR" then
-    local readyToProcess = TurtleRP.storeChunkedData(dataPrefix, playerName, stringData)
-    if readyToProcess then
-      TurtleRP.processAndStoreData(dataPrefix, playerName)
-      TurtleRP.displayData(dataPrefix, playerName)
+      processed = TurtleRP.processAndStoreData(dataPrefix, storageTable, storageKey)
+      if processed then
+        if dataPrefix == "MR" then
+          TurtleRP.RefreshDirectoryIfVisible()
+        end
+        TurtleRP.displayData(dataPrefix, storageKey)
+      end
     end
   end
 end
@@ -364,15 +591,18 @@ function TurtleRP.recievePingInformation(playerName, msg)
     if table.getn(strs) < 3 then
         return
     end
+
     local zone = strs[1]
     charData["zone"] = zone
     charData["zoneX"] = strs[2]
     charData["zoneY"] = strs[3]
+
     if strs[4] ~= nil and strs[4] ~= "" then
         charData["version"] = strs[4]
     else
         charData["version"] = "unknown"
     end
+
     if charData["version"] ~= "unknown" and TurtleRP.currentVersion ~= nil and TurtleRP.currentVersion ~= "" then
         if TurtleRP.IsVersionOlder(charData["version"], TurtleRP.currentVersion) then
             charData["outdated_version"] = "1"
@@ -383,8 +613,8 @@ function TurtleRP.recievePingInformation(playerName, msg)
             TurtleRP.latestVersion = charData["version"]
         end
         if TurtleRP.IsVersionOlder(TurtleRP.currentVersion, charData["version"]) then
-			if not versionWarningShown["shown"] then
-				versionWarningShown["shown"] = true
+            if not versionWarningShown["shown"] then
+                versionWarningShown["shown"] = true
                 DEFAULT_CHAT_FRAME:AddMessage("|cffFF5555[TurtleRP]|r Your TurtleRP version is outdated.")
                 DEFAULT_CHAT_FRAME:AddMessage("|cffAAAAAAInstalled: " .. TurtleRP.currentVersion .. " | Latest seen: " .. charData["version"] .. "|r")
                 DEFAULT_CHAT_FRAME:AddMessage("|cffAAAAAAPlease update via Turtle Launcher to avoid compatibility issues. |cff587BAF - https://github.com/bratmage/TurtleRP.git -|r")
@@ -393,9 +623,10 @@ function TurtleRP.recievePingInformation(playerName, msg)
     else
         charData["outdated_version"] = "0"
     end
-	if strs[5] ~= nil and strs[5] ~= "" then
+
+    if strs[5] ~= nil and strs[5] ~= "" then
         charData["currently_ic"] = strs[5]
-    elseif charData["currently_ic"] == nil then
+    else
         charData["currently_ic"] = "1"
     end
 
@@ -403,6 +634,20 @@ function TurtleRP.recievePingInformation(playerName, msg)
         charData["protocol_version"] = strs[6]
     else
         charData["protocol_version"] = "1"
+    end
+
+    if strs[7] ~= nil and strs[7] ~= "" then
+        charData["faction"] = strs[7]
+    else
+        charData["faction"] = "neutral"
+    end
+
+    if strs[8] ~= nil and strs[8] ~= "" then
+        charData["full_name"] = strs[8]
+    end
+
+    if strs[9] ~= nil and strs[9] ~= "" then
+        charData["class_color"] = strs[9]
     end
 
     if not WorldMapFrame:IsVisible() then
@@ -414,31 +659,57 @@ function TurtleRP.recievePingInformation(playerName, msg)
     end
 end
 
-function TurtleRP.displayData(dataPrefix, playerName)
-  if playerName == UnitName("mouseover") and (dataPrefix == "M" or dataPrefix == "MR") then
-    TurtleRP.buildTooltip(playerName, "mouseover")
+function TurtleRP.displayData(dataPrefix, storageKey)
+  if (dataPrefix == "M" or dataPrefix == "MR") and storageKey == UnitName("mouseover") then
+    TurtleRP.buildTooltip(storageKey, "mouseover")
   end
-  if playerName == UnitName("target") and (dataPrefix == "T" or dataPrefix == "TR") then
-    TurtleRP.buildTargetFrame(playerName)
+  if (dataPrefix == "T" or dataPrefix == "TR") and storageKey == UnitName("target") then
+    TurtleRP.buildTargetFrame(storageKey)
   end
-  if playerName == UnitName("target") and (dataPrefix == "D" or dataPrefix == "DR") then
-    TurtleRP.buildDescription(playerName)
+  if (dataPrefix == "D" or dataPrefix == "DR") and storageKey == UnitName("target") then
+    TurtleRP.buildDescription(storageKey)
   end
-  if playerName == TurtleRP.currentlyViewedPlayer and TurtleRP_CharacterDetails:IsVisible() then
-    if TurtleRP.currentProfileTab == "general" and
-      (dataPrefix == "M" or dataPrefix == "MR" or dataPrefix == "T" or dataPrefix == "TR") then
-      TurtleRP.buildGeneral(playerName)
+	if (dataPrefix == "PM" or dataPrefix == "PMR") and UnitExists("mouseover") and not UnitIsPlayer("mouseover") then
+	  if TurtleRPPetCache and TurtleRPPetCache[storageKey] then
+        TurtleRP.lastTooltipPetKey = storageKey
+		if TurtleRP.ShouldUseCustomTooltip and TurtleRP.ShouldUseCustomTooltip() then
+		  TurtleRP.buildPetTooltip("mouseover", storageKey)
+		end
+	  end
+	end
+	if (dataPrefix == "PT" or dataPrefix == "PTR") and UnitExists("target") and not UnitIsPlayer("target") then
+	  if TurtleRPPetCache and TurtleRPPetCache[storageKey] then
+		TurtleRP.buildPetTargetFrame(TurtleRPPetCache[storageKey])
+	  end
+	end
+  if (dataPrefix == "PT" or dataPrefix == "PTR") and TurtleRP.IsOwnedPetUnit and TurtleRP.IsOwnedPetUnit("target") then
+    if TurtleRPPetCache and TurtleRPPetCache[storageKey] then
+      TurtleRP.buildPetTargetFrame(TurtleRPPetCache[storageKey])
+    end
+  end
+  if (dataPrefix == "PD" or dataPrefix == "PDR") and TurtleRP.showDescription and TurtleRP.showDescription == storageKey and TurtleRPPetCache and TurtleRPPetCache[storageKey] then
+    TurtleRP.currentlyViewedPetUID = nil
+    TurtleRP.previewCharacterInfo = TurtleRPPetCache[storageKey]
+    TurtleRP.previewSource = "pet_admin"
+    TurtleRP.OpenProfilePreview("description")
+    TurtleRP.buildPetDescription(nil)
+    TurtleRP_Target:Hide()
+    TurtleRP.showDescription = nil
+  end
+  if storageKey == TurtleRP.currentlyViewedPlayer and TurtleRP_CharacterDetails:IsVisible() then
+    if TurtleRP.currentProfileTab == "general" and (dataPrefix == "M" or dataPrefix == "MR" or dataPrefix == "T" or dataPrefix == "TR") then
+      TurtleRP.buildGeneral(storageKey)
     end
     if TurtleRP.currentProfileTab == "description" and (dataPrefix == "D" or dataPrefix == "DR") then
-      TurtleRP.buildDescription(playerName)
+      TurtleRP.buildDescription(storageKey)
     end
     if TurtleRP.currentProfileTab == "notes" and (dataPrefix == "M" or dataPrefix == "MR") then
-      TurtleRP.SetNameAndIcon(playerName)
+      TurtleRP.SetNameAndIcon(storageKey)
     end
   end
-  if playerName == TurtleRP.showDescription and (dataPrefix == "D" or dataPrefix == "DR") then
+  if storageKey == TurtleRP.showDescription and (dataPrefix == "D" or dataPrefix == "DR") then
     TurtleRP.OpenProfile("description")
-    TurtleRP.buildDescription(playerName)
+    TurtleRP.buildDescription(storageKey)
     TurtleRP_Target:Hide()
     TurtleRP.showDescription = nil
   end
@@ -459,6 +730,7 @@ end
 
 -- Have to keep stupid 1.1.0 code because I made a boo boo
 -- //bratmage / i have no idea what this 1.1.0 note means but im keeping it forever
+-- //bratmage 2.0 / hahaha oops i changed it
 function TurtleRP.pingWithLocationAndVersion(message)
   local oldContinent, oldZone = GetCurrentMapContinent(), GetCurrentMapZone()
   SetMapToCurrentZone()
@@ -466,26 +738,30 @@ function TurtleRP.pingWithLocationAndVersion(message)
   local zoneName = GetRealZoneText()
   local icStatus = TurtleRPCharacterInfo["currently_ic"] or "1"
   local addonVersion = TurtleRP.currentVersion or "unknown"
-  local protocolVersion = "2"
+  local protocolVersion = "4"
+  local faction = TurtleRPCharacterInfo["faction"] or TurtleRP.getFactionDefault()
+  local fullName = TurtleRPCharacterInfo["full_name"] or UnitName("player") or ""
+  local classColor = TurtleRPCharacterInfo["class_color"] or ""
 
   if oldContinent and oldContinent > 0 then
     SetMapZoom(oldContinent, oldZone or 0)
   end
+
   message = message .. zoneName
-  local shouldShareLocation = TurtleRPSettings['share_location'] == "1"
+  local shouldShareLocation = TurtleRPSettings["share_location"] == "1"
 
   if shouldShareLocation then
     if (zoneX == 0 and zoneY == 0) then
       if zoneName == "Ironforge" or zoneName == "Stormwind City" or zoneName == "Darnassus" or zoneName == "Orgrimmar" or zoneName == "Thunder Bluff" or zoneName == "Undercity" or zoneName == "Alah'thalas" then
-        message = message .. "~0.5~0.5~" .. addonVersion .. "~" .. icStatus .. "~" .. protocolVersion
+        message = message .. "~0.5~0.5~" .. addonVersion .. "~" .. icStatus .. "~" .. protocolVersion .. "~" .. faction .. "~" .. fullName .. "~" .. classColor
       else
-        message = message .. "~false~false~" .. addonVersion .. "~" .. icStatus .. "~" .. protocolVersion
+        message = message .. "~false~false~" .. addonVersion .. "~" .. icStatus .. "~" .. protocolVersion .. "~" .. faction .. "~" .. fullName .. "~" .. classColor
       end
     else
-      message = message .. "~" .. math.floor(zoneX * 10000)/10000 .. "~" .. math.floor(zoneY * 10000)/10000 .. "~" .. addonVersion .. "~" .. icStatus .. "~" .. protocolVersion
+      message = message .. "~" .. math.floor(zoneX * 10000) / 10000 .. "~" .. math.floor(zoneY * 10000) / 10000 .. "~" .. addonVersion .. "~" .. icStatus .. "~" .. protocolVersion .. "~" .. faction .. "~" .. fullName .. "~" .. classColor
     end
   else
-    message = message .. "~false~false~" .. addonVersion .. "~" .. icStatus .. "~" .. protocolVersion
+    message = message .. "~false~false~" .. addonVersion .. "~" .. icStatus .. "~" .. protocolVersion .. "~" .. faction .. "~" .. fullName .. "~" .. classColor
   end
 
   TurtleRP.ttrpChatSend(message)
@@ -522,35 +798,7 @@ function TurtleRP.RefreshDirectoryIfVisible()
     TurtleRP.updateDirectorySearch()
     TurtleRP.Directory_ScrollBar_Update()
 end
-	-- Downloading profiles off of /rp was giving some serious chat throttle issues. Queueing the downloads now.
-function TurtleRP.QueueRPProfileRequest(playerName)
-    if not playerName or playerName == UnitName("player") then
-        return
-    end
-    if TurtleRPCharacters[playerName] ~= nil then
-        return
-    end
-    if rpRequestLookup[playerName] then
-        return
-    end
-    rpRequestLookup[playerName] = true
-    table.insert(rpRequestQueue, playerName)
-end
-function TurtleRP.StartRPRequestQueueProcessor()
-    local frame = CreateFrame("Frame", "TurtleRPQueueProcessor")
-    local nextRun = GetTime() + 30
-    frame:SetScript("OnUpdate", function()
-        if GetTime() >= nextRun then
-            nextRun = GetTime() + 30
-            if table.getn(rpRequestQueue) > 0 then
-                local playerName = table.remove(rpRequestQueue, 1)
-                rpRequestLookup[playerName] = nil
 
-                TurtleRP.ttrpChatSend("M:" .. playerName .. "~NO_KEY")
-            end
-        end
-    end)
-end
 function TurtleRP.QueueDirectorySearchRequest(playerName)
     if not playerName or playerName == "" then
         return
