@@ -1,9 +1,9 @@
 <Ui xmlns="http://www.blizzard.com/wow/ui/" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.blizzard.com/wow/ui/..\FrameXML\UI.xsd">
 
-  <Frame name="TurtleRP_Target" hidden="true" parent="UIParent" toplevel="true" movable="true" enableMouse="true">
-    <Size>
-      <AbsDimension y="60" />
-    </Size>
+<Frame name="TurtleRP_Target" hidden="true" parent="UIParent" toplevel="true" movable="true" enableMouse="true">
+  <Size>
+    <AbsDimension y="78" />
+  </Size>
     <Anchors>
       <Anchor point="CENTER">
         <Offset>
@@ -24,13 +24,12 @@
     </Backdrop>
 
     <Layers>
-			<Layer level="OVERLAY">
-        <!-- Target Name Text -->
+      <Layer level="OVERLAY">
         <FontString name="$parent_TargetName" inherits="OVERLAY" font="Fonts\FRIZQT__.ttf">
           <Anchors>
             <Anchor point="CENTER">
               <Offset>
-                <AbsDimension x="0" y="5" />
+                <AbsDimension x="0" y="9" />
               </Offset>
             </Anchor>
           </Anchors>
@@ -39,10 +38,24 @@
           </FontHeight>
           <Color r="255" g="255" b="255" />
         </FontString>
+
+        <FontString name="$parent_TargetSubText" inherits="OVERLAY" font="Fonts\FRIZQT__.ttf">
+          <Anchors>
+            <Anchor point="TOP" relativeTo="$parent_TargetName" relativePoint="BOTTOM">
+              <Offset>
+                <AbsDimension x="0" y="-2" />
+              </Offset>
+            </Anchor>
+          </Anchors>
+          <FontHeight>
+            <AbsValue val="10" />
+          </FontHeight>
+          <Color r="200" g="200" b="200" />
+        </FontString>
       </Layer>
     </Layers>
+
     <Frames>
-      <!-- Open Description button -->
       <Button name="$parent_DescriptionButton" inherits="UIPanelButtonGrayTemplate" text="See Description">
         <Size>
           <AbsDimension x="100" y="30" />
@@ -50,7 +63,7 @@
         <Anchors>
           <Anchor point="CENTER">
             <Offset>
-              <AbsDimension x="0" y="-20"/>
+              <AbsDimension x="0" y="-34"/>
             </Offset>
           </Anchor>
         </Anchors>
@@ -60,9 +73,36 @@
           </OnLoad>
         </Scripts>
       </Button>
-
+      <EditBox name="$parent_CurrentlyInput" alpha="0.85" inherits="InputBoxTemplate" visible="true" hidden="true" enableMouse="true" autoFocus="false">
+        <Size>
+          <AbsDimension x="140" y="20" />
+        </Size>
+        <Anchors>
+          <Anchor point="TOP" relativeTo="$parent_TargetName" relativePoint="BOTTOM">
+            <Offset>
+              <AbsDimension x="0" y="-2" />
+            </Offset>
+          </Anchor>
+        </Anchors>
+        <FontString inherits="ChatFontNormal" />
+        <Scripts>
+          <OnLoad>
+            this:SetMaxLetters(20)
+          </OnLoad>
+          <OnEnterPressed>
+            TurtleRP.SaveTargetCurrently()
+          </OnEnterPressed>
+          <OnEscapePressed>
+            this:ClearFocus()
+            TurtleRP.buildTargetFrame(UnitName("player"))
+          </OnEscapePressed>
+			<OnEditFocusLost>
+			  TurtleRP.SaveTargetCurrently(true)
+			</OnEditFocusLost>
+        </Scripts>
+      </EditBox>
       <Button name="$parent_AtAGlance1" enableMouse="true" hidden="true">
-        <Size x="28" y="28"/>
+        <Size x="28" y="38"/>
         <Anchors>
           <Anchor point="CENTER" relativeTo="$parent" relativePoint="CENTER">
             <Offset>
@@ -76,7 +116,7 @@
               <Size x="19" y="19"/>
               <Anchors>
                 <Anchor point="CENTER">
-                  <Offset x="0" y="0"/>
+                  <Offset x="0" y="6"/>
                 </Anchor>
               </Anchors>
             </Texture>
@@ -151,7 +191,7 @@
       </Button>
 
       <Button name="$parent_AtAGlance2" enableMouse="true" hidden="true">
-        <Size x="28" y="28"/>
+        <Size x="28" y="38"/>
         <Anchors>
           <Anchor point="CENTER" relativeTo="$parent" relativePoint="CENTER">
             <Offset>
@@ -165,7 +205,7 @@
               <Size x="19" y="19"/>
               <Anchors>
                 <Anchor point="CENTER">
-                  <Offset x="0" y="0"/>
+                  <Offset x="0" y="6"/>
                 </Anchor>
               </Anchors>
             </Texture>
@@ -215,7 +255,7 @@
                   <Anchors>
                     <Anchor point="TOP" relativeTo="$parent_TitleText" relativePoint="BOTTOM">
                       <Offset>
-                        <AbsDimension x="0" y="-3" />
+                        <AbsDimension x="1" y="-3" />
                       </Offset>
                     </Anchor>
                   </Anchors>
@@ -240,7 +280,7 @@
       </Button>
 
       <Button name="$parent_AtAGlance3" enableMouse="true" hidden="true">
-        <Size x="28" y="28"/>
+        <Size x="28" y="38"/>
         <Anchors>
           <Anchor point="CENTER" relativeTo="$parent" relativePoint="CENTER">
             <Offset>
@@ -254,7 +294,7 @@
               <Size x="19" y="19"/>
               <Anchors>
                 <Anchor point="CENTER">
-                  <Offset x="0" y="0"/>
+                  <Offset x="1" y="5"/>
                 </Anchor>
               </Anchors>
             </Texture>
@@ -328,6 +368,7 @@
         </Scripts>
       </Button>
     </Frames>
+
     <Scripts>
       <OnMouseDown>
         this:StartMoving()
