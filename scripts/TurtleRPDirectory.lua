@@ -9,12 +9,30 @@ local strfind = string.find
 local strgsub = string.gsub
 local strlower = string.lower
 
+function TurtleRP.OpenDirectoryListing(frame)
+  if TurtleRP.OpenProfile then
+    TurtleRP.OpenProfile("general")
+  else
+    UIPanelWindows["TurtleRP_CharacterDetails"] = { area = "left", pushable = 6 }
+    ShowUIPanel(TurtleRP_CharacterDetails)
+    if TurtleRP.OnBottomTabProfileClick then
+      TurtleRP.OnBottomTabProfileClick("general")
+    end
+  end
+end
+
 function TurtleRP.OpenDirectory()
   UIPanelWindows["TurtleRP_DirectoryFrame"] = { area = "left", pushable = 0 }
   if TurtleRP.cleanDirectory then
     TurtleRP.cleanDirectory()
   end
   ShowUIPanel(TurtleRP_DirectoryFrame)
+  TurtleRP_DirectoryFrame_TitleText:SetText(
+    TurtleRP.BuildGradientText(
+      "TurtleRP Directory",
+      TurtleRP.PrideTitleGradients[math.random(1, table.getn(TurtleRP.PrideTitleGradients))]
+    )
+  )
   TurtleRP.UpdateOfflineToggleButton()
   TurtleRP.directorySearchHasFocus = false
   TurtleRP.UpdateDirectorySearchPlaceholder()
@@ -150,7 +168,7 @@ local function TurtleRP_DirectoryBuildRow(playerName, profile, currentTime)
         sort_zone = sortZone,
         sort_short_note = sortShortNote,
 
-        search_player = sortCharacterName,
+        search_player = sortCharacterName .. " " .. sortPlayerName,
         search_zone = sortZone,
         search_short_note = sortShortNote,
     }
@@ -319,11 +337,117 @@ function TurtleRP.display_nearby_players()
   zoneListener:RegisterEvent("ZONE_CHANGED_NEW_AREA")
   zoneListener:RegisterEvent("WORLD_MAP_UPDATE")
   zoneListener:SetScript("OnEvent", function()
+    CloseDropDownMenus()
     for i, frame in TurtleRP.locationFrames do
       frame:Hide()
     end
     TurtleRP.show_player_locations()
   end)
+end
+
+function TurtleRP.GetNearbyMapDotPlayers(clickedFrame, radius)
+  local nearby = {}
+  local used = {}
+  local clickedX, clickedY
+  if not clickedFrame or not clickedFrame:IsVisible() then
+    return nearby
+  end
+  clickedX, clickedY = clickedFrame:GetCenter()
+  if not clickedX or not clickedY then
+    return nearby
+  end
+--24 might feel too tight?
+  radius = radius or 24
+
+  local _, frame
+  for _, frame in ipairs(TurtleRP.locationFrames or {}) do
+    if frame and frame:IsVisible() and frame.player_name and frame.player_name ~= "" then
+      local x, y = frame:GetCenter()
+      if x and y then
+        local dx = x - clickedX
+        local dy = y - clickedY
+        if (dx * dx + dy * dy) <= (radius * radius) then
+          if not used[frame.player_name] then
+            used[frame.player_name] = true
+            table.insert(nearby, {
+              player_name = frame.player_name,
+              full_name = frame.full_name or frame.player_name
+            })
+          end
+        end
+      end
+    end
+  end
+  table.sort(nearby, function(a, b)
+    return string.lower(a.full_name or a.player_name) < string.lower(b.full_name or b.player_name)
+  end)
+  return nearby
+end
+
+function TurtleRP.ShowMapDotPlayerPicker(players)
+  if not players or table.getn(players) == 0 then
+    return
+  end
+  if not WorldMapFrame or not WorldMapFrame:IsVisible() then
+    return
+  end
+  if not TurtleRP.MapDotPlayerPicker then
+    TurtleRP.MapDotPlayerPicker = CreateFrame("Frame", "TurtleRP_MapDotPlayerPicker", UIParent, "UIDropDownMenuTemplate")
+  end
+  TurtleRP.mapDotPlayers = players
+  UIDropDownMenu_Initialize(TurtleRP.MapDotPlayerPicker, function()
+    local info = UIDropDownMenu_CreateInfo()
+    local i, entry
+    info.text = "Select Player"
+    info.isTitle = 1
+    info.notCheckable = 1
+    info.disabled = 1
+    UIDropDownMenu_AddButton(info)
+    for i, entry in ipairs(TurtleRP.mapDotPlayers or {}) do
+      local playerName = entry.player_name
+      local displayName = entry.full_name or entry.player_name
+      info = UIDropDownMenu_CreateInfo()
+      info.text = displayName
+      info.notCheckable = 1
+      info.func = function()
+        if playerName and playerName ~= "" then
+          CloseDropDownMenus()
+          local selectedPlayer = playerName
+          local openFrame = CreateFrame("Frame")
+          openFrame:SetScript("OnUpdate", function()
+            openFrame:SetScript("OnUpdate", nil)
+            TurtleRP.ShowChatPlayerMenu(selectedPlayer)
+          end)
+        end
+      end
+      UIDropDownMenu_AddButton(info)
+    end
+    info = UIDropDownMenu_CreateInfo()
+    info.text = "Cancel"
+    info.notCheckable = 1
+    info.func = function()
+      CloseDropDownMenus()
+    end
+    UIDropDownMenu_AddButton(info)
+  end)
+  ToggleDropDownMenu(1, nil, TurtleRP.MapDotPlayerPicker, "cursor", 24, -24)
+end
+
+function TurtleRP.HandleMapDotClick(clickedFrame, button)
+  local nearbyPlayers
+  if not clickedFrame or not clickedFrame.player_name or clickedFrame.player_name == "" then
+    return
+  end
+  if button == "RightButton" then
+    nearbyPlayers = TurtleRP.GetNearbyMapDotPlayers(clickedFrame, 24)
+    if table.getn(nearbyPlayers) > 1 then
+      TurtleRP.ShowMapDotPlayerPicker(nearbyPlayers)
+    else
+      TurtleRP.ShowChatPlayerMenu(clickedFrame.player_name)
+    end
+    return
+  end
+  TurtleRP.ShowProfileFromChatLink(clickedFrame.player_name)
 end
 
 function TurtleRP.show_player_locations()
@@ -347,11 +471,13 @@ function TurtleRP.show_player_locations()
       if zone == zonesByID[currentZone] and zoneX and zoneY then
         local playerPositionFrame = locationFrames[frameCount]
         if playerPositionFrame == nil then
-          playerPositionFrame = CreateFrame("Frame", "TurtleRP_MapPlayerPosition_" .. frameCount, WorldMapDetailFrame, "TurtleRP_WorldMapUnitTemplate")
+          playerPositionFrame = CreateFrame("Button", "TurtleRP_MapPlayerPosition_" .. frameCount, WorldMapDetailFrame, "TurtleRP_WorldMapUnitTemplate")
+          playerPositionFrame:RegisterForClicks("LeftButtonUp", "RightButtonUp")
           locationFrames[frameCount] = playerPositionFrame
         end
         local mapWidth = WorldMapDetailFrame:GetWidth()
         local mapHeight = WorldMapDetailFrame:GetHeight()
+        playerPositionFrame.player_name = charName
         playerPositionFrame.full_name = charName
         if character["full_name"] ~= nil and character["full_name"] ~= "" then
           playerPositionFrame.full_name = character["full_name"]
@@ -360,11 +486,10 @@ function TurtleRP.show_player_locations()
         playerPositionFrame:SetPoint("CENTER", WorldMapDetailFrame, "TOPLEFT", zoneX * mapWidth, zoneY * mapHeight * -1)
         local icon = getglobal(playerPositionFrame:GetName() .. "Icon")
         if icon then
-          if character["currently_ic"] == "1" then
-            icon:SetTexture("Interface\\Addons\\TurtleRP\\images\\WorldMapPlayerIconIC")
-          else
-            icon:SetTexture("Interface\\Addons\\TurtleRP\\images\\WorldMapPlayerIconTRP")
-          end
+          local factionKey = character["faction"]
+          local icState = character["currently_ic"]
+          local texPath = TurtleRP.getMapIcon(factionKey, icState)
+          icon:SetTexture(texPath)
         end
         playerPositionFrame:Show()
         frameCount = frameCount + 1
@@ -514,18 +639,6 @@ function TurtleRP.get_players_online()
     end
   end
   return onlinePlayers
-end
-
-function TurtleRP.OpenDirectoryListing(frame)
-  if TurtleRP.OpenProfile then
-    TurtleRP.OpenProfile("general")
-  else
-    UIPanelWindows["TurtleRP_CharacterDetails"] = { area = "left", pushable = 6 }
-    ShowUIPanel(TurtleRP_CharacterDetails)
-    if TurtleRP.OnBottomTabProfileClick then
-      TurtleRP.OnBottomTabProfileClick("general")
-    end
-  end
 end
 
 function TurtleRP.Directory_FrameDropDown_Initialize()
