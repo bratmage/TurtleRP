@@ -320,7 +320,7 @@
       </FontString>
 
       <!-- IC Row -->
-      <FontString name="$parent_ICInfoText" inherits="OVERLAY" font="Fonts\FRIZQT__.ttf" text="IC Info                   IC Pronouns:                                   Faction">
+      <FontString name="$parent_ICInfoText" inherits="OVERLAY" font="Fonts\FRIZQT__.ttf" text="IC Info                  IC Pronouns:                                    Faction">
         <Anchors>
           <Anchor point="LEFT" relativeTo="$parent_TitleLabel" relativePoint="LEFT">
             <Offset>
