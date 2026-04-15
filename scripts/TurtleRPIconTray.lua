@@ -4,14 +4,19 @@
 ]]
 
 function TurtleRP.IconTrayMover(actionType, frame)
+  if not frame then
+    return
+  end
+  local newLeft = frame:GetLeft() or 0
+  local newTop = frame:GetTop() or 0
   if actionType == "mousedown" then
-    local newLeft = frame:GetLeft()
-    local newTop = frame:GetTop()
-    TurtleRP.movingIconTray = newLeft * newTop
+    TurtleRP.movingIconTray = {
+      left = newLeft,
+      top = newTop
+    }
   else
-    local newLeft = frame:GetLeft()
-    local newTop = frame:GetTop()
-    if TurtleRP.movingIconTray ~= (newLeft * newTop) then
+    if type(TurtleRP.movingIconTray) == "table"
+      and (TurtleRP.movingIconTray.left ~= newLeft or TurtleRP.movingIconTray.top ~= newTop) then
       TurtleRP.movingIconTray = true
     else
       TurtleRP.movingIconTray = nil
@@ -20,20 +25,20 @@ function TurtleRP.IconTrayMover(actionType, frame)
 end
 
 function TurtleRP.BindFrameToWorldFrame(frame)
-	if not frame then
+	if not frame or not UIParent or not WorldFrame then
 		return
 	end
-	local scale = UIParent:GetEffectiveScale();
-	frame:SetParent(WorldFrame);
-	frame:SetScale(scale);
+	local scale = UIParent:GetEffectiveScale() or 1
+	frame:SetParent(WorldFrame)
+	frame:SetScale(scale)
 end
 
 function TurtleRP.BindFrameToUIParent(frame)
-	if not frame then
+	if not frame or not UIParent then
 		return
 	end
-	frame:SetParent(UIParent);
-	frame:SetScale(1);
+	frame:SetParent(UIParent)
+	frame:SetScale(1)
 end
 
 function TurtleRP.EnableRPMode()
@@ -51,7 +56,6 @@ function TurtleRP.EnableRPMode()
 	for i = 1, 7 do
 		TurtleRP.BindFrameToWorldFrame(getglobal("ChatFrame" .. i));
 		TurtleRP.BindFrameToWorldFrame(getglobal("ChatFrame" .. i .. "Tab"));
-		TurtleRP.BindFrameToWorldFrame(getglobal("ChatFrame" .. i .. "TabDockRegion"));
 	end
 
 	TurtleRP.RPMode = 1;
@@ -81,7 +85,6 @@ function TurtleRP.DisableRPMode()
 	for i = 1, 7 do
 		TurtleRP.BindFrameToUIParent(getglobal("ChatFrame" .. i));
 		TurtleRP.BindFrameToUIParent(getglobal("ChatFrame" .. i .. "Tab"));
-		TurtleRP.BindFrameToUIParent(getglobal("ChatFrame" .. i .. "TabDockRegion"));
 	end
 
 	TurtleRP.RPMode = 0;
