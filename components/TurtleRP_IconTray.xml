@@ -292,11 +292,11 @@
           </Layer>
         </Layers>
         <Scripts>
-          <OnClick>
-            if TurtleRP.movingIconTray == nil then
-              TurtleRP.OpenDirectory()
-            end
-          </OnClick>
+			<OnClick>
+			  if TurtleRP.movingIconTray == nil then
+				TurtleRP.OpenDirectory()
+			  end
+			</OnClick>
           <OnEnter>
             GameTooltip:SetOwner(this, "ANCHOR_TOPRIGHT")
             GameTooltip:SetText("Open Directory Window")
@@ -457,15 +457,15 @@
               end
             end
           </OnClick>
-          <OnEnter>
-            GameTooltip:SetOwner(this, "ANCHOR_TOPRIGHT")
-            if ShowingCloak() then
-              GameTooltip:SetText("Toggle NPC and Player Names")
-            else
-              GameTooltip:SetText("Toggle NPC and Player Names")
-            end
-            GameTooltip:Show()
-          </OnEnter>
+			<OnEnter>
+			  GameTooltip:SetOwner(this, "ANCHOR_TOPRIGHT")
+			  if GetCVar("UnitNameNPC") == "1" or GetCVar("UnitNamePlayer") == "1" then
+				GameTooltip:SetText("Hide NPC and Player Names")
+			  else
+				GameTooltip:SetText("Show NPC and Player Names")
+			  end
+			  GameTooltip:Show()
+			</OnEnter>
           <OnLeave>
             GameTooltip:Hide()
           </OnLeave>
