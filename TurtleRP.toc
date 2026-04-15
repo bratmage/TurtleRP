@@ -1,20 +1,21 @@
 ## Interface: 11200
-## Title: |cffabd473Turtle RP Official
+## Title: |cffabd473Turtle RP 2
 ## Author: bratmage / luskanek / OldManAlpha / tempranova / Drixi / Vee / Zara / 
-## Version: 1.3.4
+## Version: 2.0.0
 ## Notes: 2026 Update! RP Addon custom made for Turtle WoW
-## SavedVariables: TurtleRPCharacters, TurtleRPQueryablePlayers
-## SavedVariablesPerCharacter: TurtleRPCharacterInfo, TurtleRPPlayerProfiles, TurtleRPSettings
+## SavedVariables: TurtleRPCharacters, TurtleRPQueryablePlayers, TurtleRPAccountProfiles, TurtleRPCharacterProfileBindings
+## SavedVariablesPerCharacter: TurtleRPCharacterInfo, TurtleRPPlayerProfiles, TurtleRPSettings, TurtleRPPetProfiles
 
 ChatThrottleLib\ChatThrottleLib.lua
 scripts\TurtleRPConstants.lua
+scripts\TurtleRP.lua
+scripts\TurtleRPAltIdentifier.lua
 scripts\TurtleRPComms.lua
 scripts\TurtleRPEmotes.lua
 scripts\TurtleRPDirectory.lua
 scripts\TurtleRPIconTray.lua
 scripts\TurtleRPProfile.lua
 scripts\TurtleRPAdmin.lua
-scripts\TurtleRP.lua
 scripts\TurtleRPTooltip.lua
 components\TurtleRP_Admin.xml
 components\TurtleRP_Directory.xml
