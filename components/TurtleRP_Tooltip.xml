@@ -25,4 +25,29 @@
     </Layers>
   </Frame>
 
+<Frame name="TurtleRP_Tooltip_Faction" hidden="true">
+  <Size>
+    <AbsDimension x="96" y="96" />
+  </Size>
+  <Anchors>
+    <Anchor point="CENTER">
+      <Offset>
+        <AbsDimension x="0" y="0" />
+      </Offset>
+    </Anchor>
+  </Anchors>
+  <Layers>
+    <Layer level="ARTWORK">
+      <Texture name="$parent_Icon" file="Interface\Icons\INV_Misc_QuestionMark">
+        <Size x="96" y="96" />
+        <Anchors>
+          <Anchor point="TOPLEFT">
+            <Offset x="0" y="0" />
+          </Anchor>
+        </Anchors>
+      </Texture>
+    </Layer>
+  </Layers>
+</Frame>
+
 </Ui>
