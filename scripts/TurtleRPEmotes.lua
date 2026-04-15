@@ -13,6 +13,7 @@ StaticPopupDialogs["CONFIRM_QUOTATION"] = {
   -- OnHide = function()
   -- end,
   OnAccept = function()
+    TurtleRP.sendWithError = true
     TurtleRP.SendLongFormMessage("EMOTE", TurtleRP.errorMessage)
   end,
   timeout = 0,
@@ -38,14 +39,26 @@ end
 -- Handling custom emotes
 -----
 function TurtleRP.emote_events()
-
+  if TurtleRP.currentEmoteFrameAdapter then
+    local i, frame
+    for i = 1, 7 do
+      frame = getglobal("ChatFrame" .. i)
+      if frame and frame:GetScript("OnEvent") == TurtleRP.currentEmoteFrameAdapter then
+        return
+      end
+    end
+  end
   local TurtleLastEmote = {}
   local TurtleEmoteCounter = 0
   local TurtleLastSender = {}
   local beginningQuoteFlag = {}
-
   local oldChatFrame_OnEvent = ChatFrame_OnEvent
-  function ChatFrame_OnEvent(event)
+  if oldChatFrame_OnEvent == TurtleRP.currentEmoteChatHook and TurtleRP.originalEmoteChatFrame_OnEvent then
+    oldChatFrame_OnEvent = TurtleRP.originalEmoteChatFrame_OnEvent
+  end
+  TurtleRP.originalEmoteChatFrame_OnEvent = oldChatFrame_OnEvent
+
+  local function TurtleRP_EmoteChatFrame_OnEvent(event)
     local savedEvent = event
 
     if ( strsub(event, 1, 8) == "CHAT_MSG" ) then
@@ -88,7 +101,6 @@ function TurtleRP.emote_events()
         local firstFour = strsub(firstChunk, 1, 4)
         local firstThree = strsub(firstChunk, 1, 3)
         local firstOne = strsub(firstChunk, 1, 1)
-        local showEmoteName = TurtleRPSettings and TurtleRPSettings["auto_emote_name"] == "1"
         local hideNameCompletely = false
 
         if firstFour == "||| " then
@@ -97,12 +109,8 @@ function TurtleRP.emote_events()
           nameString = ""
         elseif firstThree == "|| " then
           firstChunk = strsub(firstChunk, 4)
-          if showEmoteName then
-            nameString = TurtleRP.GetChatDisplayName(arg2, arg2, true)
-          else
-            hideNameCompletely = true
-            nameString = ""
-          end
+          hideNameCompletely = true
+          nameString = ""
         elseif firstOne == "|" then
           firstChunk = strsub(firstChunk, 2)
           firstChunk = string.gsub(firstChunk, "^%s*", "")
@@ -125,6 +133,7 @@ function TurtleRP.emote_events()
             end
           end
         end
+
         local body
         if hideNameCompletely then
           body = "|cffFF7E40" .. newString
@@ -141,17 +150,43 @@ function TurtleRP.emote_events()
         this:AddMessage(body)
       end
     end
+
     oldChatFrame_OnEvent(savedEvent)
   end
+
+  local function TurtleRP_ChatFrameEventAdapter()
+    ChatFrame_OnEvent(event)
+  end
+
+  ChatFrame_OnEvent = TurtleRP_EmoteChatFrame_OnEvent
+  TurtleRP.currentEmoteChatHook = TurtleRP_EmoteChatFrame_OnEvent
+  TurtleRP.currentEmoteFrameAdapter = TurtleRP_ChatFrameEventAdapter
+
+  local i, frame
+  for i = 1, 7 do
+    frame = getglobal("ChatFrame" .. i)
+    if frame then
+      frame:SetScript("OnEvent", TurtleRP_ChatFrameEventAdapter)
+    end
+  end
+
+  TurtleRP.ResetChatWindowVisuals()
 end
+
 function TurtleRP.SendLongFormMessage(type, message)
   local finalType = string.upper(type or "")
   local currentCharCount = 0
   local currentMessageString = ""
   local emotePrefix = ""
 
+  message = tostring(message or "")
+  if message == "" then
+    return
+  end
+
  if finalType == "EMOTE" then
     local suppressEmoteName = false
+    local showEmoteName = TurtleRPSettings and TurtleRPSettings["auto_emote_name"] == "1"
 
     if TurtleRP.sendWithError == nil then
       if string.find(message, '"') then
@@ -170,7 +205,13 @@ function TurtleRP.SendLongFormMessage(type, message)
       message = string.gsub(message, "^|%s*", "", 1)
     end
 
-    emotePrefix = suppressEmoteName and "||| " or "|| "
+    if suppressEmoteName then
+      emotePrefix = "||| "
+    elseif showEmoteName then
+      emotePrefix = ""
+    else
+      emotePrefix = "|| "
+    end
   end
   local splitMessage = TurtleRP.splitString(message, " ")
   TurtleRP.sendingLongForm = getn(splitMessage)
@@ -193,7 +234,9 @@ function TurtleRP.SendLongFormMessage(type, message)
       currentCharCount = 0
     end
   end
-  TurtleRP_ChatBox_TextScrollBox_TextInput:SetText("")
+  if TurtleRP_ChatBox_TextScrollBox_TextInput then
+    TurtleRP_ChatBox_TextScrollBox_TextInput:SetText("")
+  end
 end
 function TurtleRP.EscapePercentageCharacter(text)
 	text = string.gsub(text, "%%", "%%%%");
