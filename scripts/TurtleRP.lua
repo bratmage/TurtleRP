@@ -3820,30 +3820,32 @@ function TurtleRP.ReplaceNamesInChat(text)
     return text
 end
 
-function TurtleRP.ScheduleChatWindowRefresh()
-    if not TurtleRP.ChatWindowRefreshFrame then
-        TurtleRP.ChatWindowRefreshFrame = CreateFrame("Frame")
-    end
-
-    local elapsed = 0
-    TurtleRP.ChatWindowRefreshFrame:SetScript("OnUpdate", function()
-        elapsed = elapsed + (arg1 or 0)
-        if elapsed < 0.25 then
-            return
+function TurtleRP.ResetChatWindowVisuals()
+    local i
+    for i = 1, 7 do
+        local frame = getglobal("ChatFrame" .. i)
+        local background = getglobal("ChatFrame" .. i .. "Background")
+        if frame then
+            if FCF_SetWindowColor then
+                FCF_SetWindowColor(frame, 0, 0, 0)
+            end
+            if FCF_SetWindowAlpha then
+                FCF_SetWindowAlpha(frame, 0)
+            end
         end
-
-        TurtleRP.ChatWindowRefreshFrame:SetScript("OnUpdate", nil)
-        TurtleRP.HookChatFrames()
-    end)
+        if background then
+            background:SetVertexColor(0, 0, 0)
+            background:SetAlpha(0)
+            background:Hide()
+        end
+    end
 end
 
 function TurtleRP.HookChatFrames()
-    local i
     for i = 1, 7 do
         local frame = getglobal("ChatFrame" .. i)
         if frame and not frame.TurtleRPHooked then
             local originalAddMessage = frame.AddMessage
-
             frame.AddMessage = function(self, text, r, g, b, id, ...)
                 local skipReplace = false
 
@@ -3868,7 +3870,7 @@ function TurtleRP.HookChatFrames()
                     text = TurtleRP.ReplaceNamesInChat(text)
                 end
 
-                return originalAddMessage(self, text, r, g, b, id, ...)
+                return originalAddMessage(self, text, r, g, b, id, unpack(arg))
             end
 
             frame.TurtleRPHooked = true
@@ -4011,17 +4013,17 @@ f:RegisterEvent("PLAYER_LEVEL_UP")
 f:RegisterEvent("PLAYER_ENTERING_WORLD")
 f:SetScript("OnEvent", function()
     if event == "VARIABLES_LOADED" then
+        TurtleRP.HookChatFrames()
+        TurtleRP.ResetChatWindowVisuals()
         TurtleRP.HookPlayerLinkClicks()
-
         if TurtleRP.OnLoad then
             TurtleRP.OnLoad()
         end
-
     elseif event == "PLAYER_LEVEL_UP" then
         TurtleRP.CheckLevelForChannel(arg1, false)
-
     elseif event == "PLAYER_ENTERING_WORLD" then
         TurtleRP.HookChatFrames()
+        TurtleRP.ResetChatWindowVisuals()
         TurtleRP.CheckLevelForChannel(UnitLevel("player"), true)
     end
 end)
