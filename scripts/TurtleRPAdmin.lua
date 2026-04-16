@@ -1256,6 +1256,10 @@ function TurtleRP.GetSelectorItems()
     return TurtleRP.getFactionSelectorItems()
   end
 
+  if TurtleRP.selectorItemsCache then
+    return TurtleRP.selectorItemsCache
+  end
+
   local items = {}
   local allIcons = TurtleRP.GetAllIcons()
   local i
@@ -1278,6 +1282,7 @@ function TurtleRP.GetSelectorItems()
         end
       end
     end
+
     items[i] = {
       key = i,
       name = iconName,
@@ -1288,6 +1293,8 @@ function TurtleRP.GetSelectorItems()
       texture = "Interface\\Icons\\" .. iconName,
     }
   end
+
+  TurtleRP.selectorItemsCache = items
   return items
 end
 
@@ -1296,12 +1303,19 @@ function TurtleRP.create_icon_selector()
   TurtleRP_IconSelector:SetFrameStrata("high")
   TurtleRP_IconSelector_FilterSearchInput:SetFrameStrata("high")
   TurtleRP_IconSelector_ScrollBox:SetFrameStrata("high")
+
   if TurtleRP.iconFrames == nil then
     TurtleRP.iconFrames = TurtleRP.makeIconFrames()
   end
+
   TurtleRP.iconSelectorFilter = ""
+  TurtleRP.filteredIconItemsCache = nil
+  TurtleRP.filteredIconItemsCacheKey = nil
+
   TurtleRP_IconSelector_FilterSearchInput:SetText("")
   TurtleRP_IconSelector_ScrollBox.offset = 0
+  FauxScrollFrame_SetOffset(TurtleRP_IconSelector_ScrollBox, 0)
+
   TurtleRP.Icon_ScrollBar_Update()
 end
 
@@ -1343,20 +1357,33 @@ end
 
 function TurtleRP.GetFilteredIconItems()
   local items = TurtleRP.GetSelectorItems()
-  local filteredItems = {}
   local rawFilterText = TurtleRP.GetCurrentIconFilterTextRaw and TurtleRP.GetCurrentIconFilterTextRaw() or string.lower(TurtleRP.iconSelectorFilter or "")
   local normalizedFilterText = TurtleRP.GetCurrentIconFilterTextNormalized and TurtleRP.GetCurrentIconFilterTextNormalized() or TurtleRP.NormalizeIconSearchText(rawFilterText)
+  local cacheKey = (TurtleRP.currentIconSelector or "") .. "||" .. rawFilterText .. "||" .. normalizedFilterText
+
+  if TurtleRP.filteredIconItemsCacheKey == cacheKey and TurtleRP.filteredIconItemsCache then
+    return TurtleRP.filteredIconItemsCache
+  end
+
+  local filteredItems = {}
   local i
   local count = 0
+
   if rawFilterText == "" and normalizedFilterText == "" then
+    TurtleRP.filteredIconItemsCacheKey = cacheKey
+    TurtleRP.filteredIconItemsCache = items
     return items
   end
+
   for i = 1, table.getn(items) do
     if TurtleRP.IconItemMatchesFilter(items[i], rawFilterText, normalizedFilterText) then
       count = count + 1
       filteredItems[count] = items[i]
     end
   end
+
+  TurtleRP.filteredIconItemsCacheKey = cacheKey
+  TurtleRP.filteredIconItemsCache = filteredItems
   return filteredItems
 end
 
@@ -1371,33 +1398,32 @@ function TurtleRP.Icon_ScrollBar_Update()
   local filteredItems = TurtleRP.GetFilteredIconItems()
   local totalIcons = table.getn(filteredItems)
   local totalRows = math.ceil(totalIcons / iconsPerRow)
-  local currentRow = TurtleRP_IconSelector_ScrollBox.offset or 0
+  local currentRow = FauxScrollFrame_GetOffset(TurtleRP_IconSelector_ScrollBox) or 0
   local maxRowOffset = totalRows - visibleRows
   local iconOffset = 0
+
   if maxRowOffset < 0 then
     maxRowOffset = 0
   end
+
   if currentRow < 0 then
     currentRow = 0
   end
+
   if currentRow > maxRowOffset then
     currentRow = maxRowOffset
+    FauxScrollFrame_SetOffset(TurtleRP_IconSelector_ScrollBox, currentRow)
   end
+
   TurtleRP_IconSelector_ScrollBox.offset = currentRow
   FauxScrollFrame_Update(TurtleRP_IconSelector_ScrollBox, totalRows, visibleRows, rowHeight)
+
   iconOffset = currentRow * iconsPerRow
   TurtleRP.renderIcons(iconOffset, filteredItems)
 end
 
 function TurtleRP.IconSelector_OnVerticalScroll(scrollOffset)
-  local rowHeight = 34
-  local pixelOffset = (TurtleRP_IconSelector_ScrollBox.offset or 0) * rowHeight
-  local newRowOffset = math.floor((pixelOffset + (scrollOffset or 0)) / rowHeight + 0.5)
-  if newRowOffset < 0 then
-    newRowOffset = 0
-  end
-  TurtleRP_IconSelector_ScrollBox.offset = newRowOffset
-  TurtleRP.Icon_ScrollBar_Update()
+  FauxScrollFrame_OnVerticalScroll(34, TurtleRP.Icon_ScrollBar_Update)
 end
 
 function TurtleRP.EnsureIconSelectorContentFrame()
@@ -1489,7 +1515,6 @@ function TurtleRP.renderIcons(iconOffset, filteredItems)
       iconFrame.itemKey = item.key
       iconFrame.itemName = item.name
       iconFrame.tex:SetTexture(item.texture)
-	  iconFrame.tex:SetTexture(item.texture)
       iconFrame:Show()
     else
       iconFrame.itemKey = nil
