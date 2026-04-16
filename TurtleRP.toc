@@ -1,7 +1,7 @@
 ## Interface: 11200
 ## Title: |cffabd473Turtle RP 2
 ## Author: bratmage / luskanek / OldManAlpha / tempranova / Drixi / Vee / Zara / 
-## Version: 2.0.0
+## Version: 2.0.1
 ## Notes: 2026 Update! RP Addon custom made for Turtle WoW
 ## SavedVariables: TurtleRPCharacters, TurtleRPQueryablePlayers, TurtleRPAccountProfiles, TurtleRPCharacterProfileBindings
 ## SavedVariablesPerCharacter: TurtleRPCharacterInfo, TurtleRPPlayerProfiles, TurtleRPSettings, TurtleRPPetProfiles
