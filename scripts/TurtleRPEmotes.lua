@@ -169,8 +169,6 @@ function TurtleRP.emote_events()
       frame:SetScript("OnEvent", TurtleRP_ChatFrameEventAdapter)
     end
   end
-
-  TurtleRP.ResetChatWindowVisuals()
 end
 
 function TurtleRP.SendLongFormMessage(type, message)
