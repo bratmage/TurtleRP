@@ -4287,17 +4287,23 @@
 		  </Anchors>
 		  <FontString inherits="ChatFontNormal" />
 			<Scripts>
-			<OnTextChanged>
-			  TurtleRP.iconSelectorFilter = this:GetText() or ""
-			  TurtleRP_IconSelector_ScrollBox.offset = 0
-			  TurtleRP.Icon_ScrollBar_Update()
-			</OnTextChanged>
-			  <OnEnterPressed>
-				TurtleRP.iconSelectorFilter = this:GetText() or ""
-				TurtleRP_IconSelector_ScrollBox.offset = 0
-				TurtleRP.Icon_ScrollBar_Update()
-				this:ClearFocus()
-			  </OnEnterPressed>
+				<OnTextChanged>
+				  TurtleRP.iconSelectorFilter = this:GetText() or ""
+				  TurtleRP.filteredIconItemsCache = nil
+				  TurtleRP.filteredIconItemsCacheKey = nil
+				  TurtleRP_IconSelector_ScrollBox.offset = 0
+				  FauxScrollFrame_SetOffset(TurtleRP_IconSelector_ScrollBox, 0)
+				  TurtleRP.Icon_ScrollBar_Update()
+				</OnTextChanged>
+				<OnEnterPressed>
+				  TurtleRP.iconSelectorFilter = this:GetText() or ""
+				  TurtleRP.filteredIconItemsCache = nil
+				  TurtleRP.filteredIconItemsCacheKey = nil
+				  TurtleRP_IconSelector_ScrollBox.offset = 0
+				  FauxScrollFrame_SetOffset(TurtleRP_IconSelector_ScrollBox, 0)
+				  TurtleRP.Icon_ScrollBar_Update()
+				  this:ClearFocus()
+				</OnEnterPressed>
 			  <OnEscapePressed>
 				this:ClearFocus()
 			  </OnEscapePressed>
@@ -4321,7 +4327,10 @@
 			</OnLoad>
 				<OnClick>
 				  TurtleRP.iconSelectorFilter = TurtleRP_IconSelector_FilterSearchInput:GetText() or ""
+				  TurtleRP.filteredIconItemsCache = nil
+				  TurtleRP.filteredIconItemsCacheKey = nil
 				  TurtleRP_IconSelector_ScrollBox.offset = 0
+				  FauxScrollFrame_SetOffset(TurtleRP_IconSelector_ScrollBox, 0)
 				  TurtleRP.Icon_ScrollBar_Update()
 				</OnClick>
 		  </Scripts>
