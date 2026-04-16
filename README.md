@@ -100,6 +100,10 @@ To Do
 
 ### Recently Done
 
+2.0.1
+- Fixed bug causing chat windows to load incorrectly due to addon loading before blizzard chat.
+- Fixed bug with the icon scroll window getting stuck. Ever so slightly less laggy too.
+
 1.3.4
 This is almost entirely under-the-hood stuff.
 - **Syntax errors not allowing the addon to load based on your other addons has been properly fixed. I hope.**
