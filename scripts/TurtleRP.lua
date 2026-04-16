@@ -587,8 +587,7 @@ function TurtleRP:OnEvent()
     TurtleRP.mouseover_and_target_events()
     TurtleRP.communication_events()
     TurtleRP.display_nearby_players()
-
-    TurtleRP.emote_events()
+	TurtleRP.chatHooksPending = true
     if TurtleRP_AdminSB_Content7_VersionText then
 	  TurtleRP_AdminSB_Content7_VersionText:SetText(TurtleRP.currentVersion)
 	elseif TurtleRP_AdminSB_Content6_VersionText then
@@ -3841,6 +3840,54 @@ function TurtleRP.ResetChatWindowVisuals()
     end
 end
 
+function TurtleRP.InitializeChatHooksDeferred()
+    if TurtleRP.chatHooksDelayFrame then
+        TurtleRP.chatHooksDelayFrame.elapsed = 0
+        TurtleRP.chatHooksDelayFrame:SetScript("OnUpdate", function()
+            this.elapsed = (this.elapsed or 0) + arg1
+            if this.elapsed < 0.25 then
+                return
+            end
+            this:SetScript("OnUpdate", nil)
+            TurtleRP.HookChatFrames()
+            TurtleRP.HookPlayerLinkClicks()
+            if not TurtleRP.currentEmoteFrameAdapter then
+                TurtleRP.emote_events()
+            end
+            TurtleRP.ResetChatWindowVisuals()
+            if ChatFrame1 and FCF_SetWindowName then
+                local chatName = GetChatWindowInfo(1)
+                if not chatName or chatName == "" then
+                    FCF_SetWindowName(ChatFrame1, GENERAL or "General")
+                end
+            end
+        end)
+        return
+    end
+
+    TurtleRP.chatHooksDelayFrame = CreateFrame("Frame")
+    TurtleRP.chatHooksDelayFrame.elapsed = 0
+    TurtleRP.chatHooksDelayFrame:SetScript("OnUpdate", function()
+        this.elapsed = (this.elapsed or 0) + arg1
+        if this.elapsed < 0.25 then
+            return
+        end
+        this:SetScript("OnUpdate", nil)
+        TurtleRP.HookChatFrames()
+        TurtleRP.HookPlayerLinkClicks()
+        if not TurtleRP.currentEmoteFrameAdapter then
+            TurtleRP.emote_events()
+        end
+        TurtleRP.ResetChatWindowVisuals()
+        if ChatFrame1 and FCF_SetWindowName then
+            local chatName = GetChatWindowInfo(1)
+            if not chatName or chatName == "" then
+                FCF_SetWindowName(ChatFrame1, GENERAL or "General")
+            end
+        end
+    end)
+end
+
 function TurtleRP.HookChatFrames()
     for i = 1, 7 do
         local frame = getglobal("ChatFrame" .. i)
@@ -4013,8 +4060,6 @@ f:RegisterEvent("PLAYER_LEVEL_UP")
 f:RegisterEvent("PLAYER_ENTERING_WORLD")
 f:SetScript("OnEvent", function()
     if event == "VARIABLES_LOADED" then
-        TurtleRP.HookChatFrames()
-        TurtleRP.ResetChatWindowVisuals()
         TurtleRP.HookPlayerLinkClicks()
         if TurtleRP.OnLoad then
             TurtleRP.OnLoad()
@@ -4022,8 +4067,7 @@ f:SetScript("OnEvent", function()
     elseif event == "PLAYER_LEVEL_UP" then
         TurtleRP.CheckLevelForChannel(arg1, false)
     elseif event == "PLAYER_ENTERING_WORLD" then
-        TurtleRP.HookChatFrames()
-        TurtleRP.ResetChatWindowVisuals()
+        TurtleRP.InitializeChatHooksDeferred()
         TurtleRP.CheckLevelForChannel(UnitLevel("player"), true)
     end
 end)
