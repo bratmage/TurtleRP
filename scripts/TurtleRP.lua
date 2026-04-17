@@ -71,23 +71,28 @@ end
 function TurtleRP.SaveMinimapIconPosition()
   local centerX, centerY
   local parentX, parentY
+
   if not TurtleRPSettings or not TurtleRP_MinimapIcon or not MinimapCluster then
     return
   end
+
   centerX, centerY = TurtleRP_MinimapIcon:GetCenter()
   parentX, parentY = MinimapCluster:GetCenter()
+
   if centerX and centerY and parentX and parentY then
-    TurtleRPSettings["minimap_icon_x"] = math.floor((centerX - parentX) + 0.5)
-    TurtleRPSettings["minimap_icon_y"] = math.floor((centerY - parentY) + 0.5)
+    TurtleRPSettings["minimap_icon_x"] = centerX - parentX
+    TurtleRPSettings["minimap_icon_y"] = centerY - parentY
   end
 end
 
 function TurtleRP.RestoreMinimapIconPosition()
-  if not TurtleRP_MinimapIcon then
-    return
-  end
   local x = -40
   local y = 0
+
+  if not TurtleRP_MinimapIcon or not MinimapCluster then
+    return
+  end
+
   if TurtleRPSettings then
     if type(TurtleRPSettings["minimap_icon_x"]) == "number" then
       x = TurtleRPSettings["minimap_icon_x"]
@@ -96,6 +101,8 @@ function TurtleRP.RestoreMinimapIconPosition()
       y = TurtleRPSettings["minimap_icon_y"]
     end
   end
+
+  TurtleRP_MinimapIcon:StopMovingOrSizing()
   TurtleRP_MinimapIcon:ClearAllPoints()
   TurtleRP_MinimapIcon:SetPoint("CENTER", MinimapCluster, "CENTER", x, y)
 end
@@ -104,7 +111,6 @@ function TurtleRP.RefreshMinimapIconState()
   if not TurtleRP_MinimapIcon or not TurtleRPSettings then
     return
   end
-  TurtleRP.RestoreMinimapIconPosition()
   if TurtleRPSettings["hide_minimap_icon"] == "1" then
     TurtleRP_MinimapIcon:Hide()
     return
@@ -131,9 +137,8 @@ function TurtleRP.ResetMinimapIconPosition()
 
   TurtleRP.movingMinimapButton = nil
   TurtleRP_MinimapIcon:StopMovingOrSizing()
-  TurtleRP_MinimapIcon:ClearAllPoints()
-  TurtleRP_MinimapIcon:SetPoint("CENTER", MinimapCluster, "CENTER", -40, 0)
-  TurtleRP_MinimapIcon:Show()
+  TurtleRP.RestoreMinimapIconPosition()
+  TurtleRP.RefreshMinimapIconState()
 end
 
 function TurtleRP.CloseWorldMap()
