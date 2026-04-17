@@ -420,41 +420,39 @@ local function ApplyCustomTooltip()
   TurtleRP.lastTooltipUnit = unitName
 end
 
-  local function RestoreDefaultTooltip(forceRebuild)
-    local unitName
-    if not UnitExists("mouseover") then
-      HideTooltipExtras(1)
-      return
-    end
-
-    unitName = UnitName("mouseover")
-    if not unitName or unitName == "" then
-      HideTooltipExtras(1)
-      return
-    end
-
-    HideTooltipExtras(false)
-    ResetTooltipFontsOnly()
-
-    if forceRebuild then
-      TurtleRP.tooltipRefreshInProgress = true
-
-      if TurtleRP.gameTooltip and TurtleRP.gameTooltip.ClearLines then
-        TurtleRP.gameTooltip:ClearLines()
-      end
-
-      TurtleRP.gameTooltip:SetUnit("mouseover")
-
-      if pfUI and pfUI.tooltip and pfUI.tooltip.Update then
-        pfUI.tooltip:Update()
-      end
-
-      TurtleRP.tooltipRefreshInProgress = nil
-    end
-
-    TurtleRP.lastTooltipMode = "default"
-    TurtleRP.lastTooltipUnit = unitName
+local function RestoreDefaultTooltip(forceRebuild)
+  local unitName
+  if not UnitExists("mouseover") then
+    HideTooltipExtras(1)
+    return
   end
+
+  unitName = UnitName("mouseover")
+  if not unitName or unitName == "" then
+    HideTooltipExtras(1)
+    return
+  end
+
+  HideTooltipExtras(false)
+  ResetTooltipFontsOnly()
+  if forceRebuild then
+    TurtleRP.tooltipRefreshInProgress = true
+
+    if TurtleRP.gameTooltip and TurtleRP.gameTooltip.ClearLines then
+      TurtleRP.gameTooltip:ClearLines()
+    end
+    TurtleRP.gameTooltip:SetUnit("mouseover")
+    TurtleRP.tooltipRefreshInProgress = nil
+  end
+  if pfUI and pfUI.tooltip and pfUI.tooltip.Update then
+    pfUI.tooltip:Update()
+  end
+  if UnitExists("mouseover") then
+    TurtleRP_UpdateTooltipStatusBar("mouseover")
+  end
+  TurtleRP.lastTooltipMode = "default"
+  TurtleRP.lastTooltipUnit = unitName
+end
 
   local defaultTooltipClearedScript = TurtleRP.gameTooltip:GetScript("OnTooltipCleared")
   TurtleRP.gameTooltip:SetScript("OnTooltipCleared", function()
@@ -584,23 +582,28 @@ TurtleRP_ClearTooltipLines = function()
 end
 
 function TurtleRP_UpdateTooltipStatusBar(unit)
-  if not unit or unit == "" or not UnitExists(unit) then
-    if GameTooltipStatusBar then
-      GameTooltipStatusBar:Hide()
-      if GameTooltipStatusBar.backdrop and GameTooltipStatusBar.backdrop.health then
-        GameTooltipStatusBar.backdrop.health:SetText("")
-      end
-    end
-    if pfUI and pfUI.tooltipStatusBar then
-      pfUI.tooltipStatusBar:Hide()
-    end
-    if TurtleRP and TurtleRP.defaultTooltipStatusBarText then
-      TurtleRP.defaultTooltipStatusBarText:Hide()
-    end
+  if not GameTooltipStatusBar then
     return
   end
 
-  if not GameTooltipStatusBar then
+  local function HideFallbackText()
+    if TurtleRP and TurtleRP.defaultTooltipStatusBarText then
+      TurtleRP.defaultTooltipStatusBarText:Hide()
+    end
+    if GameTooltipStatusBar.backdrop and GameTooltipStatusBar.backdrop.health then
+      GameTooltipStatusBar.backdrop.health:Hide()
+    end
+    if pfUI and pfUI.tooltipStatusBar and pfUI.tooltipStatusBar.HP then
+      pfUI.tooltipStatusBar.HP:SetText("")
+    end
+  end
+
+  if not unit or unit == "" or not UnitExists(unit) then
+    GameTooltipStatusBar:Hide()
+    if pfUI and pfUI.tooltipStatusBar then
+      pfUI.tooltipStatusBar:Hide()
+    end
+    HideFallbackText()
     return
   end
 
@@ -608,15 +611,10 @@ function TurtleRP_UpdateTooltipStatusBar(unit)
   local hpMax = UnitHealthMax(unit)
   if not hp or not hpMax or hpMax <= 0 then
     GameTooltipStatusBar:Hide()
-    if GameTooltipStatusBar.backdrop and GameTooltipStatusBar.backdrop.health then
-      GameTooltipStatusBar.backdrop.health:SetText("")
-    end
     if pfUI and pfUI.tooltipStatusBar then
       pfUI.tooltipStatusBar:Hide()
     end
-    if TurtleRP and TurtleRP.defaultTooltipStatusBarText then
-      TurtleRP.defaultTooltipStatusBarText:Hide()
-    end
+    HideFallbackText()
     return
   end
 
@@ -669,11 +667,7 @@ function TurtleRP_UpdateTooltipStatusBar(unit)
 
   local function AbbrevValue(value)
     if value >= 1000 then
-      local short = math.floor((value / 1000) * 10 + 0.5) / 10
-      if math.floor(short) == short then
-        return tostring(math.floor(short)) .. "k"
-      end
-      return tostring(short) .. "k"
+      return string.format("%.1fk", value / 1000)
     end
     return tostring(value)
   end
@@ -682,31 +676,44 @@ function TurtleRP_UpdateTooltipStatusBar(unit)
 
   if pfUI and pfUI.tooltipStatusBar and pfUI.tooltipStatusBar.HP then
     pfUI.tooltipStatusBar.HP:SetText(hpText)
+    pfUI.tooltipStatusBar.HP:Show()
+    pfUI.tooltipStatusBar:Show()
+    if GameTooltipStatusBar.backdrop and GameTooltipStatusBar.backdrop.health then
+      GameTooltipStatusBar.backdrop.health:SetText("")
+      GameTooltipStatusBar.backdrop.health:Hide()
+    end
     if TurtleRP and TurtleRP.defaultTooltipStatusBarText then
       TurtleRP.defaultTooltipStatusBarText:Hide()
     end
-    if GameTooltipStatusBar.backdrop and GameTooltipStatusBar.backdrop.health then
-      GameTooltipStatusBar.backdrop.health:SetText("")
-    end
-  elseif GameTooltipStatusBar.backdrop and GameTooltipStatusBar.backdrop.health then
+    GameTooltipStatusBar:Show()
+    return
+  end
+
+  if GameTooltipStatusBar.backdrop and not GameTooltipStatusBar.backdrop.health then
+    GameTooltipStatusBar.backdrop.health = GameTooltipStatusBar.backdrop:CreateFontString("Status", "DIALOG", "GameFontWhite")
+    GameTooltipStatusBar.backdrop.health:SetFont(STANDARD_TEXT_FONT, 12, "OUTLINE")
+    GameTooltipStatusBar.backdrop.health:SetPoint("TOP", 0, 4)
+    GameTooltipStatusBar.backdrop.health:SetNonSpaceWrap(false)
+  end
+
+  if GameTooltipStatusBar.backdrop and GameTooltipStatusBar.backdrop.health then
     GameTooltipStatusBar.backdrop.health:SetText(hpText)
+    GameTooltipStatusBar.backdrop.health:Show()
     if TurtleRP and TurtleRP.defaultTooltipStatusBarText then
       TurtleRP.defaultTooltipStatusBarText:Hide()
     end
   else
     if not TurtleRP.defaultTooltipStatusBarText then
       TurtleRP.defaultTooltipStatusBarText = GameTooltipStatusBar:CreateFontString(nil, "OVERLAY", "GameFontWhite")
-      TurtleRP.defaultTooltipStatusBarText:SetPoint("CENTER", GameTooltipStatusBar, "CENTER", 0, 0)
-      TurtleRP.defaultTooltipStatusBarText:SetFont(STANDARD_TEXT_FONT, 10, "OUTLINE")
+      TurtleRP.defaultTooltipStatusBarText:SetFont(STANDARD_TEXT_FONT, 12, "OUTLINE")
+      TurtleRP.defaultTooltipStatusBarText:SetPoint("TOP", GameTooltipStatusBar, "TOP", 0, 4)
+      TurtleRP.defaultTooltipStatusBarText:SetNonSpaceWrap(false)
     end
     TurtleRP.defaultTooltipStatusBarText:SetText(hpText)
     TurtleRP.defaultTooltipStatusBarText:Show()
   end
 
   GameTooltipStatusBar:Show()
-  if pfUI and pfUI.tooltipStatusBar then
-    pfUI.tooltipStatusBar:Show()
-  end
 end
 
 local function TurtleRP_EnsureTooltipLine(index)
