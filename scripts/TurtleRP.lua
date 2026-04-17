@@ -3553,25 +3553,25 @@ function TurtleRP.validateBeforeSaving(data)
 end
 --this was the funniest thing i ever had to put together. shoutout to my visit to Moon Guard Goldshire, and F-List.
 TurtleRP.NSFWKeywordList = {
-    "18+", "69", "a/b/o", "ab/o", "adult themes", "adultrp", "aftercare", "ageplay", "alluring", "alpha", "anal", "anus", "aphrodisiac", "arousal", "aroused",
-    "ass", "bare", "bdsm", "beta", "bimbo", "bimbod", "bimbofication", "biting", "bloodplay", "blowjob", "bondage", "boobs", "bounce", "bouncing", "bra", "breasts", "breed", "breeding",
-    "brothel", "bulge", "busty", "butt", "chastity", "chest puppies", "chestpuppies", "claiming", "climax", "clit", "cnc", "cock", "collar", "consensual non-consent", "coquette", "corruption", "cowgirl", "craving",
-    "creampie", "cuck", "cuckold", "cuffs", "cum", "cunt", "curvaceous", "curvy", "daddy", "daddykink", "deepthroat", "desire", "dick", "dirty rp", "discipline", "doggystyle",
-    "dom", "dominant", "domme", "dommy", "double penetration", "dripping", "dubcon", "ecchi", "edging", "entrance", "erection", "erogenous", "erotic", "erotica", "erp",
-    "estrus", "exaggerated curves", "exhibition", "exhibitionism", "explicit", "exposed", "f-list", "f-list.net", "facefuck", "facesitting", "facials", "feet", "feral", "feralplay", "fetish", "filthy",
-    "fisting", "flirt", "flirtatious", "flirty", "flog", "foot worship", "footfetish", "freeuse", "frisky", "fuck me", "fucktoy", "gangbang", "giantess", "gore", "hard limits",
-    "hardon", "heave", "heaving", "heavy breasts", "hentai", "hole", "horny", "hot", "hypnosis", "hypnotic", "impact", "impregnation", "incubus", "inflation", "intimate", "jiggle", "jiggling",
-    "kink", "kinks", "kinky", "kittenplay", "knifeplay", "knot", "knotting", "lactation", "latex", "leash", "leather", "length", "lewd", "lewdness", "libido", "limits",
-    "lingerie", "lust", "lustful", "macro", "marking", "masochism", "masochist", "master", "mating", "mating press", "maturerp", "micro", "milking", "mindcontrol", "minx",
-    "mischievous", "missionary", "mistress", "mommy", "mommykink", "mrp", "naked", "naughty", "needy", "nesting", "netorare", "no list", "noncon", "nsfw", "nsfwrp",
-    "ntr", "nude", "nudity", "omega", "omegaverse", "oral", "orgasm", "orgy", "overstimulation", "owned", "ownership", "paddle", "panties", "pegging", "petplay", "pheromones",
-    "pillowy", "piss", "plump", "plush", "playful", "plaything", "pleasure", "pole dance", "pregnancy", "pregnant", "primal", "primalplay", "provocative", "punishment", "puppyplay", "pussy",
-    "queening", "rapeplay", "ravish", "revealing", "riding", "rimming", "risque", "rolling", "rope", "rubber", "rut", "sadism", "sadist", "scat", "scent marking", "seduce",
-    "seduction", "seductive", "seed", "semen", "sensual", "sensuous", "sex", "sexual", "shaft", "shibari", "sinful", "size difference", "slave", "slick", "slut", "smut", "smutrp",
-    "snuff", "soaked", "soft flesh", "soft limits", "spanking", "spicy", "steamy", "stockings", "strapon", "strip", "stripping", "sub", "subby", "submissive", "succubus", "suggestive",
-    "swallow", "switch", "taboo", "tantalizing", "tease", "tempter", "tempting", "tentacle", "tf", "thick", "thick thighs", "thicc", "threesome", "throatfuck", "throbbing", "tits",
+    "18+", "69", "a/b/o", "ab/o", "adult themes", "aftercare", "ageplay", "alluring", "anal", "anus", "arousal", "aroused",
+    "ass", "bare", "bdsm", "bimbo", "bimbod", "bimbofication", "bloodplay", "blowjob", "bondage", "boobs", "bra", "breasts", "breed", "breeding",
+    "bulge", "busty", "butt", "chest puppies", "chestpuppies", "claiming", "climax", "clit", "cnc", "cock", "consensual non-consent", "coquette", "cowgirl",
+    "creampie", "cuck", "cuckold", "cum", "cunt", "curvaceous", "daddykink", "deepthroat", "desire", "dick", "dirty rp", "doggystyle",
+    "dom", "dominant", "domme", "dommy", "double penetration", "dubcon", "ecchi", "edging", "erection", "erogenous", "erotic", "erotica", "erp",
+    "estrus", "exaggerated curves", "exhibition", "exhibitionism", "explicit", "f-list", "f-list.net", "facefuck", "facesitting", "facials", "feralplay", "fetish",
+    "fisting", "flirt", "flirtatious", "flirty", "foot worship", "footfetish", "freeuse", "frisky", "fuck me", "fucktoy", "gangbang", "giantess", "gore", "hard limits",
+    "hardon", "heavy breasts", "hentai", "horny", "impregnation", "incubus", "inflation", "intimate", "jiggle", "jiggling",
+    "kink", "kinks", "kinky", "kittenplay", "knifeplay", "knotting", "lactation", "latex", "length", "lewd", "lewdness", "libido",
+    "lingerie", "lust", "lustful", "masochism", "masochist", "mating", "mating press", "maturerp", "milking", "mindcontrol", "minx",
+    "mistress", "mommykink", "mrp", "naked", "naughty", "nesting", "netorare", "no list", "noncon", "nsfw", "nsfwrp",
+    "ntr", "nude", "nudity", "oral", "orgasm", "orgy", "overstimulation", "ownership", "paddle", "panties", "pegging", "petplay", "pheromones",
+    "pillowy", "piss", "plaything", "pole dance", "primalplay", "provocative", "puppyplay", "pussy",
+    "queening", "rapeplay", "ravish", "rimming", "risque", "rope", "rubber", "rut", "sadism", "sadist", "scat", "scent marking", "seduce",
+    "seduction", "seductive", "seed", "semen", "sensual", "sensuous", "sex", "sexual", "shaft", "shibari", "sinful", "size difference", "slave", "slut", "smut", "smutrp",
+    "soaked", "soft flesh", "soft limits", "spanking", "strapon", "strip", "stripping", "sub", "subby", "submissive", "succubus", "suggestive",
+    "taboo", "tantalizing", "tease", "tempter", "tentacle", "tf", "thick thighs", "thicc", "threesome", "throatfuck", "throbbing", "tits",
     "torture", "total power exchange", "touch starved", "tpe", "transformation", "unbirth", "underwear", "use me", "vagina", "vaginal", "vixen", "voluptuous", "vore", "voyeur", "voyeurism",
-    "watersports", "whip", "whore", "wicked", "wobble", "wobbling", "yearning", "yes list"
+    "watersports", "whore", "yearning", "yes list"
 }
 
 function TurtleRP.NormalizeNSFWDetectionText(text)
