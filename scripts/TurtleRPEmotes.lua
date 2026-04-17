@@ -142,9 +142,13 @@ function TurtleRP.emote_events()
           if formattedName == nil or formattedName == "" then
             formattedName = TurtleRP.GetChatDisplayName(arg2, arg2, true)
           end
-          if TurtleRP.IsRPColorDisabledForPlayer and TurtleRP.IsRPColorDisabledForPlayer(arg2) then
-            formattedName = "|cffFF7E40" .. (TurtleRP.StripColorCodes and TurtleRP.StripColorCodes(formattedName) or formattedName) .. "|r"
+
+          if not TurtleRPSettings or TurtleRPSettings["chat_colors"] ~= "1" then
+            formattedName = string.gsub(formattedName, "|[cC][fF][fF]%x%x%x%x%x%x", "")
+            formattedName = string.gsub(formattedName, "|[rR]", "")
+            formattedName = "|cffFF7E40" .. formattedName .. "|r"
           end
+
           body = format(
             TEXT(getglobal("CHAT_"..type.."_GET")) .. "|cffFF7E40" .. TurtleRP.EscapePercentageCharacter(newString) .. "|r",
             formattedName
