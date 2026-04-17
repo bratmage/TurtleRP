@@ -8,6 +8,11 @@
 -----
 
 function TurtleRP.OpenAdmin()
+  if TurtleRP_MinimapIcon then
+    TurtleRP_MinimapIcon:StopMovingOrSizing()
+  end
+  TurtleRP.movingMinimapButton = nil
+
   UIPanelWindows["TurtleRP_AdminSB"] = { area = "left", pushable = 0 }
 
   TurtleRP.previewCharacterInfo = nil
@@ -40,7 +45,7 @@ function TurtleRP.OpenAdmin()
     tab:Show()
   end
 
-    TurtleRP_AdminSB_Content1_Tab2:Hide()
+  TurtleRP_AdminSB_Content1_Tab2:Hide()
   if TurtleRP_AdminSB_Content5_Tab2 then
     TurtleRP_AdminSB_Content5_Tab2:Hide()
   end
@@ -55,8 +60,8 @@ function TurtleRP.OpenAdmin()
   TurtleRP.RefreshProfilesTab()
   TurtleRP.OnAdminTabClick(1)
   TurtleRP.currentDescriptionAlign = ""
-
 end
+
 TurtleRP.currentDescriptionTag = "p"
 TurtleRP.currentDescriptionAlign = ""
 
