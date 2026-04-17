@@ -52,51 +52,34 @@
         <HighlightTexture alphaMode="ADD" file="Interface\Minimap\UI-Minimap-ZoomButton-Highlight"/>
 
         <Scripts>
-          <OnClick>
-            if arg1 == "LeftButton" and not IsControlKeyDown() and TurtleRP.movingMinimapButton == nil then
-              TurtleRP.OpenAdmin()
-            end
-          </OnClick>
+		<OnClick>
+		  if arg1 == "LeftButton" and not IsControlKeyDown() then
+			TurtleRP_MinimapIcon:StopMovingOrSizing()
+			TurtleRP.movingMinimapButton = nil
+			TurtleRP.OpenAdmin()
+		  end
+		</OnClick>
 
-          <OnEnter>
-            GameTooltip:SetOwner(this, "ANCHOR_LEFT")
-            GameTooltip:SetText("TurtleRP")
-            GameTooltip:AddLine("Left Click: Open settings", 1, 1, 1)
-            GameTooltip:AddLine("Ctrl + Left Click + Drag: Move icon", 0.8, 0.8, 0.8)
-            GameTooltip:Show()
-          </OnEnter>
+		<OnMouseDown>
+		  TurtleRP_MinimapIcon:StopMovingOrSizing()
 
-          <OnLeave>
-            GameTooltip:Hide()
-          </OnLeave>
+		  if arg1 == "LeftButton" and IsControlKeyDown() then
+			TurtleRP.movingMinimapButton = 1
+			TurtleRP_MinimapIcon:StartMoving()
+		  else
+			TurtleRP.movingMinimapButton = nil
+		  end
+		</OnMouseDown>
 
-          <OnMouseDown>
-            if arg1 == "LeftButton" and IsControlKeyDown() then
-              local newLeft = TurtleRP_MinimapIcon:GetLeft()
-              local newTop = TurtleRP_MinimapIcon:GetTop()
-              TurtleRP.movingMinimapButton = newLeft * newTop
-              TurtleRP_MinimapIcon:StartMoving()
-            else
-              TurtleRP.movingMinimapButton = nil
-            end
-          </OnMouseDown>
+		<OnMouseUp>
+		  TurtleRP_MinimapIcon:StopMovingOrSizing()
 
-          <OnMouseUp>
-            if arg1 == "LeftButton" and IsControlKeyDown() then
-              TurtleRP_MinimapIcon:StopMovingOrSizing()
-              local newLeft = TurtleRP_MinimapIcon:GetLeft()
-              local newTop = TurtleRP_MinimapIcon:GetTop()
+		  if TurtleRP.movingMinimapButton == 1 then
+			TurtleRP.SaveMinimapIconPosition()
+		  end
 
-              if TurtleRP.movingMinimapButton ~= (newLeft * newTop) then
-                TurtleRP.movingMinimapButton = true
-                TurtleRP.SaveMinimapIconPosition()
-              else
-                TurtleRP.movingMinimapButton = nil
-              end
-            else
-              TurtleRP.movingMinimapButton = nil
-            end
-          </OnMouseUp>
+		  TurtleRP.movingMinimapButton = nil
+		</OnMouseUp>
         </Scripts>
       </Button>
     </Frames>
