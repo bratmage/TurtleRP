@@ -61,18 +61,24 @@ if pfUI ~= nil and pfUI.uf ~= nil and pfUI.uf.target ~= nil then
   TurtleRP.targetFrame = pfUI.uf.target
   TurtleRP.shaguEnabled = true
 end
+
+function TurtleRP.ForceCloseMap()
+  if WorldMapFrame:IsVisible() then
+    ToggleWorldMap()
+  end
+end
 --minimap icon stuffs
 function TurtleRP.SaveMinimapIconPosition()
-  if not TurtleRPSettings or not TurtleRP_MinimapIcon then
+  local centerX, centerY
+  local parentX, parentY
+  if not TurtleRPSettings or not TurtleRP_MinimapIcon or not MinimapCluster then
     return
   end
-  local centerX = TurtleRP_MinimapIcon:GetCenter()
-  local centerY = TurtleRP_MinimapIcon:GetCenter()
-  local parentX = MinimapCluster:GetCenter()
-  local parentY = MinimapCluster:GetCenter()
+  centerX, centerY = TurtleRP_MinimapIcon:GetCenter()
+  parentX, parentY = MinimapCluster:GetCenter()
   if centerX and centerY and parentX and parentY then
-    TurtleRPSettings["minimap_icon_x"] = math.floor(centerX - parentX + 0.5)
-    TurtleRPSettings["minimap_icon_y"] = math.floor(centerY - parentY + 0.5)
+    TurtleRPSettings["minimap_icon_x"] = math.floor((centerX - parentX) + 0.5)
+    TurtleRPSettings["minimap_icon_y"] = math.floor((centerY - parentY) + 0.5)
   end
 end
 
@@ -101,9 +107,45 @@ function TurtleRP.RefreshMinimapIconState()
   TurtleRP.RestoreMinimapIconPosition()
   if TurtleRPSettings["hide_minimap_icon"] == "1" then
     TurtleRP_MinimapIcon:Hide()
-  else
-    TurtleRP_MinimapIcon:Show()
+    return
   end
+  if pfUI == nil and WorldMapFrame and WorldMapFrame:IsShown() then
+    TurtleRP_MinimapIcon:Hide()
+    return
+  end
+  TurtleRP_MinimapIcon:Show()
+end
+
+function TurtleRP.ResetMinimapIconPosition()
+  if not TurtleRP_MinimapIcon then
+    return
+  end
+
+  if not TurtleRPSettings then
+    TurtleRPSettings = {}
+  end
+
+  TurtleRPSettings["minimap_icon_x"] = -40
+  TurtleRPSettings["minimap_icon_y"] = 0
+  TurtleRPSettings["hide_minimap_icon"] = "0"
+
+  TurtleRP.movingMinimapButton = nil
+  TurtleRP_MinimapIcon:StopMovingOrSizing()
+  TurtleRP_MinimapIcon:ClearAllPoints()
+  TurtleRP_MinimapIcon:SetPoint("CENTER", MinimapCluster, "CENTER", -40, 0)
+  TurtleRP_MinimapIcon:Show()
+end
+
+function TurtleRP.CloseWorldMap()
+    if WorldMapFrame and WorldMapFrame:IsVisible() then
+        if ToggleWorldMap then
+            ToggleWorldMap()
+        else
+            HideUIPanel(WorldMapFrame)
+        end
+        return 1
+    end
+    return nil
 end
 -- New icon compatibility
 TurtleRP.baseIconsCount = table.getn(TurtleRPIcons or {})
@@ -935,6 +977,9 @@ function TurtleRP:OnEvent()
       if lowerMsg == "help" then
         TurtleRP.log("|cff8C48AB/ttrp|r - open admin panel")
         TurtleRP.log("|cff8C48AB/ttrp dir|r - open directory panel")
+        TurtleRP.log("|cff8C48AB/ttrp tray|r - reset the icon tray position")
+        TurtleRP.log("|cff8C48AB/ttrp minimapreset|r - reset the minimap icon position")
+        TurtleRP.log("|cff8C48AB/ttrp closemap|r - close the world map")
         TurtleRP.log("|cff8C48AB/ttrp petcreate|r - create and assign a new pet profile from your current target")
         TurtleRP.log("|cff8C48AB/ttrp petassign <profile name>|r - assign an existing pet profile to your current target")
         TurtleRP.log("|cff8C48AB/ttrp petlist|r - list profiles for your current target")
@@ -948,6 +993,15 @@ function TurtleRP:OnEvent()
          TurtleRP_IconTray:ClearAllPoints()
          TurtleRP_IconTray:SetPoint("CENTER", "UIParent")
          TurtleRP_IconTray:Show()
+      elseif lowerMsg == "minimapreset" or lowerMsg == "resetminimap" or lowerMsg == "mmreset" then
+         TurtleRP.ResetMinimapIconPosition()
+         DEFAULT_CHAT_FRAME:AddMessage("|cff66CC66[TurtleRP]|r Minimap icon reset.")
+      elseif lowerMsg == "closemap" or lowerMsg == "mapclose" or lowerMsg == "closeworldmap" then
+         if TurtleRP.CloseWorldMap() then
+            DEFAULT_CHAT_FRAME:AddMessage("|cff66CC66[TurtleRP]|r World map closed.")
+         else
+            DEFAULT_CHAT_FRAME:AddMessage("|cffFFCC66[TurtleRP]|r World map was not open.")
+         end
 --Mainly for debugging but like.... might as well keep? This is all stuff for pet profiles.
       elseif lowerMsg == "petcreate" then
         TurtleRP.CreatePetProfileFromTarget()
@@ -3925,97 +3979,115 @@ function TurtleRP.HookChatFrames()
     end
 end
 
+local function TurtleRP_RunAfterDropdowns(callback)
+    local waitFrame = CreateFrame("Frame")
+    waitFrame:SetScript("OnUpdate", function()
+        if (DropDownList1 and DropDownList1:IsVisible()) or (DropDownList2 and DropDownList2:IsVisible()) then
+            return
+        end
+        waitFrame:SetScript("OnUpdate", nil)
+        if callback then
+            callback()
+        end
+    end)
+end
+
+
 function TurtleRP.ShowProfileFromChatLink(playerName)
     if not playerName or playerName == "" then
         return
     end
+
     TurtleRP.currentlyViewedPlayer = playerName
     TurtleRP.sendRequestForData("M", playerName)
+    CloseDropDownMenus()
     TurtleRP.OpenProfile("general")
 end
 
+
 function TurtleRP.ShowChatPlayerMenu(playerName)
-    if not playerName or playerName == "" then
-        return
+  if not playerName or playerName == "" then return end
+  if not TurtleRP.ChatPlayerMenu then
+    TurtleRP.ChatPlayerMenu = CreateFrame("Frame", "TurtleRP_ChatPlayerMenu", UIParent, "UIDropDownMenuTemplate")
+  end
+  TurtleRP.chatMenuPlayerName = playerName
+  UIDropDownMenu_Initialize(TurtleRP.ChatPlayerMenu, function()
+    local info = UIDropDownMenu_CreateInfo()
+
+    info.text = playerName
+    info.isTitle = 1
+    info.notCheckable = 1
+    info.disabled = 1
+    UIDropDownMenu_AddButton(info)
+
+    info = UIDropDownMenu_CreateInfo()
+    info.text = "Whisper"
+    info.notCheckable = 1
+    info.func = function()
+      ChatFrame_SendTell(TurtleRP.chatMenuPlayerName)
     end
-    if not TurtleRP.ChatPlayerMenu then
-        TurtleRP.ChatPlayerMenu = CreateFrame("Frame", "TurtleRP_ChatPlayerMenu", UIParent, "UIDropDownMenuTemplate")
+    UIDropDownMenu_AddButton(info)
+
+    info = UIDropDownMenu_CreateInfo()
+    info.text = "Invite"
+    info.notCheckable = 1
+    info.func = function()
+      InviteByName(TurtleRP.chatMenuPlayerName)
     end
-    TurtleRP.chatMenuPlayerName = playerName
-    UIDropDownMenu_Initialize(TurtleRP.ChatPlayerMenu, function()
-        local info = UIDropDownMenu_CreateInfo()
+    UIDropDownMenu_AddButton(info)
 
-        info.text = playerName
-        info.isTitle = 1
-        info.notCheckable = 1
-        info.disabled = 1
-        UIDropDownMenu_AddButton(info)
+    info = UIDropDownMenu_CreateInfo()
+    info.text = "Target"
+    info.notCheckable = 1
+    info.func = function()
+      TargetByName(TurtleRP.chatMenuPlayerName, true)
+    end
+    UIDropDownMenu_AddButton(info)
 
-        info = UIDropDownMenu_CreateInfo()
-        info.text = "Whisper"
-        info.notCheckable = 1
-        info.func = function()
-            ChatFrame_SendTell(TurtleRP.chatMenuPlayerName)
-        end
-        UIDropDownMenu_AddButton(info)
+    info = UIDropDownMenu_CreateInfo()
+    info.text = "Report Player"
+    info.notCheckable = 1
+    info.func = function()
+      CloseDropDownMenus()
+      if ToggleHelpFrame then ToggleHelpFrame() end
+      if HelpFrame and HelpFrame:IsShown() and HelpFrame_ShowFrame and HelpFrameOpenTicket then
+        HelpFrame_ShowFrame(HelpFrameOpenTicket)
+      end
+    end
+    UIDropDownMenu_AddButton(info)
 
-        info = UIDropDownMenu_CreateInfo()
-        info.text = "Invite"
-        info.notCheckable = 1
-        info.func = function()
-            InviteByName(TurtleRP.chatMenuPlayerName)
-        end
-        UIDropDownMenu_AddButton(info)
+    info = UIDropDownMenu_CreateInfo()
+	info.text = "Show TurtleRP Profile"
+    info.notCheckable = 1
+    info.func = function()
+		local selectedPlayer = TurtleRP.chatMenuPlayerName
+		  CloseDropDownMenus()
+		  TurtleRP.ForceCloseMap()
+		  local openFrame = CreateFrame("Frame")
+		  openFrame:SetScript("OnUpdate", function()
+			openFrame:SetScript("OnUpdate", nil)
+			TurtleRP.ShowProfileFromChatLink(selectedPlayer)
+		  end)
+		end
+    UIDropDownMenu_AddButton(info)
 
-        info = UIDropDownMenu_CreateInfo()
-        info.text = "Target"
-        info.notCheckable = 1
-        info.func = function()
-            TargetByName(TurtleRP.chatMenuPlayerName, true)
-        end
-        UIDropDownMenu_AddButton(info)
+    info = UIDropDownMenu_CreateInfo()
+    info.text = "Ignore Player"
+    info.notCheckable = 1
+    info.func = function()
+      AddIgnore(TurtleRP.chatMenuPlayerName)
+    end
+    UIDropDownMenu_AddButton(info)
 
-        info = UIDropDownMenu_CreateInfo()
-        info.text = "Report Player"
-        info.notCheckable = 1
-        info.func = function()
-            CloseDropDownMenus()
-            if ToggleHelpFrame then
-                ToggleHelpFrame()
-            end
-            if HelpFrame and HelpFrame:IsShown() then
-                if HelpFrame_ShowFrame and HelpFrameOpenTicket then
-                    HelpFrame_ShowFrame(HelpFrameOpenTicket)
-                end
-            end
-        end
-        UIDropDownMenu_AddButton(info)
-
-        info = UIDropDownMenu_CreateInfo()
-        info.text = "Show TurtleRP Profile"
-        info.notCheckable = 1
-        info.func = function()
-            TurtleRP.ShowProfileFromChatLink(TurtleRP.chatMenuPlayerName)
-        end
-        UIDropDownMenu_AddButton(info)
-
-        info = UIDropDownMenu_CreateInfo()
-        info.text = "Ignore Player"
-        info.notCheckable = 1
-        info.func = function()
-            AddIgnore(TurtleRP.chatMenuPlayerName)
-        end
-        UIDropDownMenu_AddButton(info)
-
-        info = UIDropDownMenu_CreateInfo()
-        info.text = "Cancel"
-        info.notCheckable = 1
-        info.func = function()
-            CloseDropDownMenus()
-        end
-        UIDropDownMenu_AddButton(info)
-    end)
-    ToggleDropDownMenu(1, nil, TurtleRP.ChatPlayerMenu, "cursor", 24, -24)
+    info = UIDropDownMenu_CreateInfo()
+    info.text = "Cancel"
+    info.notCheckable = 1
+    info.func = function()
+      CloseDropDownMenus()
+    end
+    UIDropDownMenu_AddButton(info)
+  end)
+  ToggleDropDownMenu(1, nil, TurtleRP.ChatPlayerMenu, "cursor", 24, -24)
 end
 
 --New chat message to show player_name variable when shift clicking due to the hook overriding it
@@ -4054,6 +4126,45 @@ function TurtleRP.HookPlayerLinkClicks()
     end
 end
 
+function TurtleRP.EnableStandaloneWorldMapBehavior()
+  if pfUI ~= nil then
+    return
+  end
+  if not WorldMapFrame then
+    return
+  end
+  table.insert(UISpecialFrames, "WorldMapFrame")
+  UIPanelWindows["WorldMapFrame"] = { area = "center" }
+  if not TurtleRP.originalWorldMapOnShow then
+    TurtleRP.originalWorldMapOnShow = WorldMapFrame:GetScript("OnShow")
+  end
+  if not TurtleRP.originalWorldMapOnHide then
+    TurtleRP.originalWorldMapOnHide = WorldMapFrame:GetScript("OnHide")
+  end
+  WorldMapFrame:SetScript("OnShow", function()
+    if TurtleRP.originalWorldMapOnShow then
+      TurtleRP.originalWorldMapOnShow()
+    end
+    TurtleRP.RefreshMinimapIconState()
+  end)
+  WorldMapFrame:SetScript("OnHide", function()
+    if TurtleRP.originalWorldMapOnHide then
+      TurtleRP.originalWorldMapOnHide()
+    end
+    TurtleRP.RefreshMinimapIconState()
+  end)
+  if not TurtleRP.originalToggleWorldMap then
+    TurtleRP.originalToggleWorldMap = ToggleWorldMap
+  end
+  ToggleWorldMap = function()
+    if WorldMapFrame:IsShown() then
+      WorldMapFrame:Hide()
+    else
+      WorldMapFrame:Show()
+    end
+  end
+end
+
 local f = CreateFrame("Frame")
 f:RegisterEvent("VARIABLES_LOADED")
 f:RegisterEvent("PLAYER_LEVEL_UP")
@@ -4067,6 +4178,7 @@ f:SetScript("OnEvent", function()
     elseif event == "PLAYER_LEVEL_UP" then
         TurtleRP.CheckLevelForChannel(arg1, false)
     elseif event == "PLAYER_ENTERING_WORLD" then
+        TurtleRP.EnableStandaloneWorldMapBehavior()
         TurtleRP.InitializeChatHooksDeferred()
         TurtleRP.CheckLevelForChannel(UnitLevel("player"), true)
     end
