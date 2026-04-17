@@ -587,9 +587,15 @@ function TurtleRP_UpdateTooltipStatusBar(unit)
   if not unit or unit == "" or not UnitExists(unit) then
     if GameTooltipStatusBar then
       GameTooltipStatusBar:Hide()
+      if GameTooltipStatusBar.backdrop and GameTooltipStatusBar.backdrop.health then
+        GameTooltipStatusBar.backdrop.health:SetText("")
+      end
     end
     if pfUI and pfUI.tooltipStatusBar then
       pfUI.tooltipStatusBar:Hide()
+    end
+    if TurtleRP and TurtleRP.defaultTooltipStatusBarText then
+      TurtleRP.defaultTooltipStatusBarText:Hide()
     end
     return
   end
@@ -602,8 +608,14 @@ function TurtleRP_UpdateTooltipStatusBar(unit)
   local hpMax = UnitHealthMax(unit)
   if not hp or not hpMax or hpMax <= 0 then
     GameTooltipStatusBar:Hide()
+    if GameTooltipStatusBar.backdrop and GameTooltipStatusBar.backdrop.health then
+      GameTooltipStatusBar.backdrop.health:SetText("")
+    end
     if pfUI and pfUI.tooltipStatusBar then
       pfUI.tooltipStatusBar:Hide()
+    end
+    if TurtleRP and TurtleRP.defaultTooltipStatusBarText then
+      TurtleRP.defaultTooltipStatusBarText:Hide()
     end
     return
   end
@@ -655,19 +667,40 @@ function TurtleRP_UpdateTooltipStatusBar(unit)
     end
   end
 
-  if pfUI and pfUI.tooltipStatusBar and pfUI.tooltipStatusBar.HP then
-    local function AbbrevValue(value)
-      if value >= 1000 then
-        local short = math.floor((value / 1000) * 10 + 0.5) / 10
-        if math.floor(short) == short then
-          return tostring(math.floor(short)) .. "k"
-        end
-        return tostring(short) .. "k"
+  local function AbbrevValue(value)
+    if value >= 1000 then
+      local short = math.floor((value / 1000) * 10 + 0.5) / 10
+      if math.floor(short) == short then
+        return tostring(math.floor(short)) .. "k"
       end
-      return tostring(value)
+      return tostring(short) .. "k"
     end
+    return tostring(value)
+  end
 
-    pfUI.tooltipStatusBar.HP:SetText(AbbrevValue(hp) .. " / " .. AbbrevValue(hpMax))
+  local hpText = AbbrevValue(hp) .. " / " .. AbbrevValue(hpMax)
+
+  if pfUI and pfUI.tooltipStatusBar and pfUI.tooltipStatusBar.HP then
+    pfUI.tooltipStatusBar.HP:SetText(hpText)
+    if TurtleRP and TurtleRP.defaultTooltipStatusBarText then
+      TurtleRP.defaultTooltipStatusBarText:Hide()
+    end
+    if GameTooltipStatusBar.backdrop and GameTooltipStatusBar.backdrop.health then
+      GameTooltipStatusBar.backdrop.health:SetText("")
+    end
+  elseif GameTooltipStatusBar.backdrop and GameTooltipStatusBar.backdrop.health then
+    GameTooltipStatusBar.backdrop.health:SetText(hpText)
+    if TurtleRP and TurtleRP.defaultTooltipStatusBarText then
+      TurtleRP.defaultTooltipStatusBarText:Hide()
+    end
+  else
+    if not TurtleRP.defaultTooltipStatusBarText then
+      TurtleRP.defaultTooltipStatusBarText = GameTooltipStatusBar:CreateFontString(nil, "OVERLAY", "GameFontWhite")
+      TurtleRP.defaultTooltipStatusBarText:SetPoint("CENTER", GameTooltipStatusBar, "CENTER", 0, 0)
+      TurtleRP.defaultTooltipStatusBarText:SetFont(STANDARD_TEXT_FONT, 10, "OUTLINE")
+    end
+    TurtleRP.defaultTooltipStatusBarText:SetText(hpText)
+    TurtleRP.defaultTooltipStatusBarText:Show()
   end
 
   GameTooltipStatusBar:Show()
