@@ -3,7 +3,13 @@
   See Github repo at https://github.com/tempranova/turtlerp
 ]]
 
+local function TurtleRP_PrepareProfileOpen()
+  CloseDropDownMenus()
+end
+
+
 function TurtleRP.OpenProfile(openTo)
+  TurtleRP.ForceCloseMap()
   TurtleRP.currentlyViewedPetUID = nil
   TurtleRP_CharacterDetails_FrameTabButton1.bookType = "general"
   TurtleRP_CharacterDetails_FrameTabButton2.bookType = "description"
@@ -12,27 +18,11 @@ function TurtleRP.OpenProfile(openTo)
     TurtleRP.currentlyViewedPlayer = UnitName("player")
   end
   UIPanelWindows["TurtleRP_CharacterDetails"] = { area = "left", pushable = 6 }
+  TurtleRP_PrepareProfileOpen()
   ShowUIPanel(TurtleRP_CharacterDetails)
   TurtleRP.OnBottomTabProfileClick(openTo)
 end
 
-function TurtleRP.OpenProfilePreview(openTo)
-  TurtleRP.currentlyViewedPetUID = nil
-  TurtleRP_CharacterDetails_FrameTabButton1.bookType = "general"
-  TurtleRP_CharacterDetails_FrameTabButton2.bookType = "description"
-  TurtleRP_CharacterDetails_FrameTabButton3.bookType = "notes"
-  if not TurtleRP.currentlyViewedPlayer or TurtleRP.currentlyViewedPlayer == "" then
-    TurtleRP.currentlyViewedPlayer = UnitName("player")
-  end
-  TurtleRP_CharacterDetails:ClearAllPoints()
-  if TurtleRP_AdminSB and TurtleRP_AdminSB:IsShown() then
-    TurtleRP_CharacterDetails:SetPoint("TOPLEFT", TurtleRP_AdminSB, "TOPRIGHT", 20, 0)
-  else
-    TurtleRP_CharacterDetails:SetPoint("CENTER", UIParent, "CENTER", 0, 0)
-  end
-  TurtleRP_CharacterDetails:Show()
-  TurtleRP.OnBottomTabProfileClick(openTo)
-end
 
 function TurtleRP.OnBottomTabProfileClick(bookType)
   TurtleRP.currentProfileTab = bookType or "general"
@@ -473,19 +463,25 @@ function TurtleRP.buildNotes(playerName)
   TurtleRP_CharacterDetails_FrameTabButton2:SetNormalTexture("Interface\\Spellbook\\UI-Spellbook-Tab-Unselected")
   TurtleRP_CharacterDetails_FrameTabButton3:SetNormalTexture("Interface\\Spellbook\\UI-SpellBook-Tab1-Selected")
 end
+
 function TurtleRP.OpenPetProfile(petUID, openTo)
+  local useCenterArea = nil
   TurtleRP.currentlyViewedPetUID = petUID
   TurtleRP.currentlyViewedPlayer = nil
-
   TurtleRP_CharacterDetails_FrameTabButton1.bookType = "general"
   TurtleRP_CharacterDetails_FrameTabButton2.bookType = "description"
   TurtleRP_CharacterDetails_FrameTabButton3.bookType = "notes"
-
-  UIPanelWindows["TurtleRP_CharacterDetails"] = { area = "left", pushable = 6 }
+  useCenterArea = (pfUI == nil and WorldMapFrame and WorldMapFrame:IsVisible())
+  if useCenterArea then
+    UIPanelWindows["TurtleRP_CharacterDetails"] = { area = "center", pushable = 0 }
+  else
+    UIPanelWindows["TurtleRP_CharacterDetails"] = { area = "left", pushable = 6 }
+  end
+  TurtleRP_PrepareProfileOpen()
   ShowUIPanel(TurtleRP_CharacterDetails)
-
   TurtleRP.OnBottomTabProfileClick(openTo or "general")
 end
+
 
 function TurtleRP.buildPetGeneral(petUID)
   local petProfile = (TurtleRP.previewSource == "pet_admin" and TurtleRP.previewCharacterInfo)
