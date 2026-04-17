@@ -200,11 +200,11 @@
           </Layer>
         </Layers>
         <Scripts>
-          <OnClick>
-            if TurtleRP.movingIconTray == nil then
-              TurtleRP_ChatBox:Show()
-            end
-          </OnClick>
+			<OnClick>
+			  if TurtleRP.movingIconTray == nil then
+				TurtleRP_ChatBox:Show()
+			  end
+			</OnClick>
           <OnEnter>
             GameTooltip:SetOwner(this, "ANCHOR_TOPRIGHT")
             GameTooltip:SetText("Open Extended Chat Window")
