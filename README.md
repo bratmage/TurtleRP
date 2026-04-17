@@ -90,6 +90,7 @@ Bugs
 
 Minor Bugs
 - Color pick is sometimes connected to other color picker instances
+- Admin screen looks kinda funny on non 16:9
 - Dev: There are pretty much no devnotes in any of my commitments besides my notes in the actual code. If you had anything you wanted to contribute anyways, so much of the base addon has changed that it probably isn't even compatible. lol. sorry. Message me on discord though!
 
 To Do
@@ -99,6 +100,13 @@ To Do
 ---
 
 ### Recently Done
+2.0.2
+- Tooltips are fixed. No more yellow names or pfquest funny business.
+- Minimap Icon no longer jumps around. new command to reset position, /ttrp minimapreset (or /ttrp mmreset)
+- Chatbox is back. Oops, it was deleted entirely last time.
+- NSFW Warning is more forgiving now. Apparently not everyone on the internet uses the word 'feet' in inappropriate ways. Blame the imperials.
+- Profiles can now be opened from the map screen on Non-PFUI setups
+- Player name on emotes without RP color or name on are properly orange instead of white
 
 2.0.1
 - Fixed bug causing chat windows to load incorrectly due to addon loading before blizzard chat.
