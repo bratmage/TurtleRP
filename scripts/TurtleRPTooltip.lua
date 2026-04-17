@@ -625,7 +625,8 @@ function TurtleRP_UpdateTooltipStatusBar(unit)
     local colorR, colorG, colorB = nil, nil, nil
     local unitName = UnitName(unit)
     local characterInfo = unitName and TurtleRPCharacters and TurtleRPCharacters[unitName] or nil
-    local useBlizzardClassColor = IsAltKeyDown and IsAltKeyDown()
+    local useBlizzardClassColor = (IsAltKeyDown and IsAltKeyDown())
+      or (TurtleRPSettings and TurtleRPSettings["disable_tooltip"] == "1")
 
     if not useBlizzardClassColor and characterInfo and characterInfo["class_color"] and characterInfo["class_color"] ~= "" and TurtleRP.hex2rgb then
       colorR, colorG, colorB = TurtleRP.hex2rgb(characterInfo["class_color"])
