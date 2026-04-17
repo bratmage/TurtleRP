@@ -10,11 +10,19 @@ local strgsub = string.gsub
 local strlower = string.lower
 
 function TurtleRP.OpenDirectoryListing(frame)
+  if pfUI == nil and WorldMapFrame and WorldMapFrame:IsVisible() then
+    HideUIPanel(WorldMapFrame)
+  end
+
   if TurtleRP.OpenProfile then
     TurtleRP.OpenProfile("general")
   else
     UIPanelWindows["TurtleRP_CharacterDetails"] = { area = "left", pushable = 6 }
-    ShowUIPanel(TurtleRP_CharacterDetails)
+    if pfUI == nil then
+      ShowUIPanel(TurtleRP_CharacterDetails, 1)
+    else
+      ShowUIPanel(TurtleRP_CharacterDetails)
+    end
     if TurtleRP.OnBottomTabProfileClick then
       TurtleRP.OnBottomTabProfileClick("general")
     end
@@ -22,6 +30,10 @@ function TurtleRP.OpenDirectoryListing(frame)
 end
 
 function TurtleRP.OpenDirectory()
+  if pfUI == nil and WorldMapFrame and WorldMapFrame:IsVisible() then
+    TurtleRP.ForceCloseMap()
+  end
+ 
   UIPanelWindows["TurtleRP_DirectoryFrame"] = { area = "left", pushable = 0 }
   if TurtleRP.cleanDirectory then
     TurtleRP.cleanDirectory()
@@ -385,61 +397,52 @@ function TurtleRP.GetNearbyMapDotPlayers(clickedFrame, radius)
 end
 
 function TurtleRP.ShowMapDotPlayerPicker(players)
-  if not players or table.getn(players) == 0 then
-    return
-  end
-  if not WorldMapFrame or not WorldMapFrame:IsVisible() then
-    return
-  end
+  if not players or table.getn(players) == 0 then return end
   if not TurtleRP.MapDotPlayerPicker then
     TurtleRP.MapDotPlayerPicker = CreateFrame("Frame", "TurtleRP_MapDotPlayerPicker", UIParent, "UIDropDownMenuTemplate")
   end
   TurtleRP.mapDotPlayers = players
+  
   UIDropDownMenu_Initialize(TurtleRP.MapDotPlayerPicker, function()
     local info = UIDropDownMenu_CreateInfo()
-    local i, entry
     info.text = "Select Player"
     info.isTitle = 1
     info.notCheckable = 1
-    info.disabled = 1
     UIDropDownMenu_AddButton(info)
+    
     for i, entry in ipairs(TurtleRP.mapDotPlayers or {}) do
       local playerName = entry.player_name
       local displayName = entry.full_name or entry.player_name
+      
       info = UIDropDownMenu_CreateInfo()
       info.text = displayName
       info.notCheckable = 1
       info.func = function()
-        if playerName and playerName ~= "" then
-          CloseDropDownMenus()
-          local selectedPlayer = playerName
-          local openFrame = CreateFrame("Frame")
-          openFrame:SetScript("OnUpdate", function()
-            openFrame:SetScript("OnUpdate", nil)
-            TurtleRP.ShowChatPlayerMenu(selectedPlayer)
-          end)
-        end
+        CloseDropDownMenus()
+        TurtleRP.ForceCloseMap()
+        local openFrame = CreateFrame("Frame")
+        openFrame:SetScript("OnUpdate", function()
+          openFrame:SetScript("OnUpdate", nil)
+          TurtleRP.ShowProfileFromChatLink(playerName)
+        end)
       end
       UIDropDownMenu_AddButton(info)
     end
     info = UIDropDownMenu_CreateInfo()
     info.text = "Cancel"
     info.notCheckable = 1
-    info.func = function()
-      CloseDropDownMenus()
-    end
+    info.func = function() CloseDropDownMenus() end
     UIDropDownMenu_AddButton(info)
   end)
   ToggleDropDownMenu(1, nil, TurtleRP.MapDotPlayerPicker, "cursor", 24, -24)
 end
 
 function TurtleRP.HandleMapDotClick(clickedFrame, button)
-  local nearbyPlayers
   if not clickedFrame or not clickedFrame.player_name or clickedFrame.player_name == "" then
     return
   end
   if button == "RightButton" then
-    nearbyPlayers = TurtleRP.GetNearbyMapDotPlayers(clickedFrame, 24)
+    local nearbyPlayers = TurtleRP.GetNearbyMapDotPlayers(clickedFrame, 24)
     if table.getn(nearbyPlayers) > 1 then
       TurtleRP.ShowMapDotPlayerPicker(nearbyPlayers)
     else
@@ -447,7 +450,14 @@ function TurtleRP.HandleMapDotClick(clickedFrame, button)
     end
     return
   end
-  TurtleRP.ShowProfileFromChatLink(clickedFrame.player_name)
+  local selectedPlayer = clickedFrame.player_name
+  TurtleRP.ForceCloseMap()
+  
+  local f = CreateFrame("Frame")
+  f:SetScript("OnUpdate", function()
+    f:SetScript("OnUpdate", nil)
+    TurtleRP.ShowProfileFromChatLink(selectedPlayer)
+  end)
 end
 
 function TurtleRP.show_player_locations()
