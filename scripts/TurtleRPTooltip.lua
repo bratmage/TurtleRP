@@ -221,7 +221,7 @@ function TurtleRP.buildPetTooltip(unit)
   TurtleRP_ClearTooltipLines()
 
   local l = 1
-  local titleExtraSpaces = (icon ~= nil and icon ~= "") and "      " or ""
+  local titleExtraSpaces = (icon ~= nil and icon ~= "") and "       " or ""
   local nameWrapPrefix = nameColor .. titleExtraSpaces
   local nameLine = nameWrapPrefix .. name
   nameLine = TurtleRP.WrapTooltipLine(nameLine, 34)
@@ -258,14 +258,14 @@ function TurtleRP.buildPetTooltip(unit)
   getglobal("GameTooltipTextRight2"):Hide()
 
   if speciesLevelText ~= "" then
-    getglobal("GameTooltipTextLeft2"):SetText(speciesLevelText)
-    getglobal("GameTooltipTextLeft2"):SetWidth(220)
-    getglobal("GameTooltipTextLeft2"):SetJustifyH("RIGHT")
+    getglobal("GameTooltipTextLeft2"):SetText("")
+    getglobal("GameTooltipTextRight2"):Show()
+    getglobal("GameTooltipTextRight2"):SetText(speciesLevelText)
+    getglobal("GameTooltipTextRight2"):SetJustifyH("RIGHT")
     l = 2
   else
     l = 1
   end
-
   getglobal("GameTooltipTextLeft3"):SetText("")
   getglobal("GameTooltipTextRight3"):SetText("")
   getglobal("GameTooltipTextRight3"):Hide()
@@ -371,39 +371,42 @@ function TurtleRP.tooltip_events()
     end
   end
 
-  local function HideTooltipExtras()
+  local function HideTooltipExtras(hideStatusBars)
     if TurtleRP_Tooltip_Icon then
       TurtleRP_Tooltip_Icon:Hide()
     end
     if TurtleRP_Tooltip_Faction then
       TurtleRP_Tooltip_Faction:Hide()
     end
-    if GameTooltipStatusBar then
-      GameTooltipStatusBar:Hide()
-    end
-    if pfUI and pfUI.tooltipStatusBar then
-      pfUI.tooltipStatusBar:Hide()
+    if hideStatusBars == nil or hideStatusBars then
+      if GameTooltipStatusBar then
+        GameTooltipStatusBar:Hide()
+      end
+      if pfUI and pfUI.tooltipStatusBar then
+        pfUI.tooltipStatusBar:Hide()
+      end
     end
   end
 
 local function ApplyCustomTooltip()
   local unitName
-    if not UnitExists("mouseover") then
-      HideTooltipExtras()
-      return
-    end
+  if TurtleRP.tooltipRefreshInProgress then
+    return
+  end
+  if not UnitExists("mouseover") then
+    HideTooltipExtras()
+    return
+  end
   if not TurtleRP.ShouldUseCustomTooltip() then
     return
   end
   if not TurtleRP.ShouldUseCustomTooltipForUnit("mouseover") then
     return
   end
-
   unitName = UnitName("mouseover")
   if not unitName or unitName == "" then
     return
   end
-
   ResetTooltipFontsOnly()
   ClearTooltipTextForCustomBuild()
   HideTooltipExtras()
@@ -417,24 +420,38 @@ local function ApplyCustomTooltip()
   TurtleRP.lastTooltipUnit = unitName
 end
 
-    local function RestoreDefaultTooltip()
+  local function RestoreDefaultTooltip(forceRebuild)
     local unitName
     if not UnitExists("mouseover") then
+      HideTooltipExtras(1)
       return
     end
+
     unitName = UnitName("mouseover")
     if not unitName or unitName == "" then
+      HideTooltipExtras(1)
       return
     end
-    HideTooltipExtras()
+
+    HideTooltipExtras(false)
     ResetTooltipFontsOnly()
-    TurtleRP.tooltipRefreshInProgress = true
-    TurtleRP.gameTooltip:SetUnit("mouseover")
--- pfUI my sweet, beloved.
-    if pfUI and pfUI.tooltip and pfUI.tooltip.Update then
-      pfUI.tooltip:Update()
+
+    if forceRebuild then
+      TurtleRP.tooltipRefreshInProgress = true
+
+      if TurtleRP.gameTooltip and TurtleRP.gameTooltip.ClearLines then
+        TurtleRP.gameTooltip:ClearLines()
+      end
+
+      TurtleRP.gameTooltip:SetUnit("mouseover")
+
+      if pfUI and pfUI.tooltip and pfUI.tooltip.Update then
+        pfUI.tooltip:Update()
+      end
+
+      TurtleRP.tooltipRefreshInProgress = nil
     end
-    TurtleRP.tooltipRefreshInProgress = nil
+
     TurtleRP.lastTooltipMode = "default"
     TurtleRP.lastTooltipUnit = unitName
   end
@@ -456,6 +473,7 @@ end
   TurtleRP.gameTooltip:SetScript("OnUpdate", function()
     local currentUnitName
     local wantedMode
+    local forceRebuild = nil
 
     if defaultTooltipUpdateScript then
       defaultTooltipUpdateScript()
@@ -469,16 +487,19 @@ end
     if not UnitExists("mouseover") then
       return
     end
+
     currentUnitName = UnitName("mouseover")
-	wantedMode = "default"
-	if TurtleRP.ShouldUseCustomTooltip() and TurtleRP.ShouldUseCustomTooltipForUnit("mouseover") then
-	  wantedMode = "custom"
-	end
+    wantedMode = "default"
+    if TurtleRP.ShouldUseCustomTooltip() and TurtleRP.ShouldUseCustomTooltipForUnit("mouseover") then
+      wantedMode = "custom"
+    end
+
     if TurtleRP.lastTooltipUnit ~= currentUnitName or TurtleRP.lastTooltipMode ~= wantedMode then
       if wantedMode == "custom" then
         ApplyCustomTooltip()
       else
-        RestoreDefaultTooltip()
+        forceRebuild = (TurtleRP.lastTooltipMode == "custom" and TurtleRP.lastTooltipUnit == currentUnitName)
+        RestoreDefaultTooltip(forceRebuild)
       end
     end
   end)
@@ -562,23 +583,6 @@ TurtleRP_ClearTooltipLines = function()
   end
 end
 
-TurtleRP_ClearTooltipLinesAfter = function(startIndex)
-  local i
-  for i = startIndex, 20 do
-    local left = getglobal("GameTooltipTextLeft"..i)
-    local right = getglobal("GameTooltipTextRight"..i)
-    if left then
-      left:SetText("")
-      left:SetTextColor(1, 1, 1)
-    end
-    if right then
-      right:SetText("")
-      right:Hide()
-      right:SetTextColor(1, 1, 1)
-    end
-  end
-end
-
 function TurtleRP_UpdateTooltipStatusBar(unit)
   if not unit or unit == "" or not UnitExists(unit) then
     if GameTooltipStatusBar then
@@ -589,9 +593,11 @@ function TurtleRP_UpdateTooltipStatusBar(unit)
     end
     return
   end
+
   if not GameTooltipStatusBar then
     return
   end
+
   local hp = UnitHealth(unit)
   local hpMax = UnitHealthMax(unit)
   if not hp or not hpMax or hpMax <= 0 then
@@ -609,6 +615,7 @@ function TurtleRP_UpdateTooltipStatusBar(unit)
     local colorR, colorG, colorB = nil, nil, nil
     local unitName = UnitName(unit)
     local characterInfo = unitName and TurtleRPCharacters and TurtleRPCharacters[unitName] or nil
+
     if characterInfo and characterInfo["class_color"] and characterInfo["class_color"] ~= "" and TurtleRP.hex2rgb then
       colorR, colorG, colorB = TurtleRP.hex2rgb(characterInfo["class_color"])
     else
@@ -618,6 +625,7 @@ function TurtleRP_UpdateTooltipStatusBar(unit)
         colorR, colorG, colorB = color.r, color.g, color.b
       end
     end
+
     if colorR and colorG and colorB then
       if GameTooltipStatusBar.SetStatusBarColor_orig then
         GameTooltipStatusBar:SetStatusBarColor_orig(colorR, colorG, colorB)
@@ -629,7 +637,11 @@ function TurtleRP_UpdateTooltipStatusBar(unit)
       end
     end
   else
-    local reaction = UnitReaction(unit, "player")
+    local reaction = nil
+    if not (UnitPlayerControlled and UnitPlayerControlled(unit)) then
+      reaction = UnitReaction(unit, "player")
+    end
+
     local color = reaction and UnitReactionColor and UnitReactionColor[reaction] or nil
     if color then
       if GameTooltipStatusBar.SetStatusBarColor_orig then
@@ -642,6 +654,7 @@ function TurtleRP_UpdateTooltipStatusBar(unit)
       end
     end
   end
+
   if pfUI and pfUI.tooltipStatusBar and pfUI.tooltipStatusBar.HP then
     local function AbbrevValue(value)
       if value >= 1000 then
@@ -656,6 +669,7 @@ function TurtleRP_UpdateTooltipStatusBar(unit)
 
     pfUI.tooltipStatusBar.HP:SetText(AbbrevValue(hp) .. " / " .. AbbrevValue(hpMax))
   end
+
   GameTooltipStatusBar:Show()
   if pfUI and pfUI.tooltipStatusBar then
     pfUI.tooltipStatusBar:Show()
@@ -714,7 +728,7 @@ function TurtleRP.buildTooltip(playerName, targetType)
   local ICOff             = colorPrefix .. "D3681E"
   local pronounColor      = colorPrefix .. "ffcc80"
 
-  local titleExtraSpaces  = (icon ~= nil and icon ~= "") and "      " or ""
+  local titleExtraSpaces  = (icon ~= nil and icon ~= "") and "       " or ""
   local guildExtraSpaces  = (icon ~= nil and icon ~= "") and "        " or ""
   if TurtleRP.shaguEnabled then
     guildExtraSpaces = (icon ~= nil and icon ~= "") and "          " or ""
