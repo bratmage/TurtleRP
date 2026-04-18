@@ -100,6 +100,16 @@ To Do
 ---
 
 ### Recently Done
+
+2.0.3
+Mainly some adjustments to chat throttling issues.
+- Renamed **Neutral** to **Independent** in faction selection.
+- Not ever single beast/critter/etc sends a data request to /ttrp now. 
+- Cooldowns on requesting the same information from the same player. 
+- No more requesting information from yourself.
+- Adjusting formatting on Admin panel for non 16:9 formats.
+- Changed color of link button in description to make it more obvious when someone has one.
+
 2.0.2
 - Tooltips are fixed. No more yellow names or pfquest funny business.
 - Minimap Icon no longer jumps around. new command to reset position, /ttrp minimapreset (or /ttrp mmreset)
