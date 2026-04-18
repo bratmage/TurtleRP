@@ -33,10 +33,70 @@ local timeOfLastSend = time()
 local lastMouseoverKey = nil
 local lastMouseoverRequestAt = 0
 local mouseoverRequestCooldown = 2
+local lastPetMouseoverKey = nil
+local lastPetMouseoverRequestAt = 0
+local petMouseoverRequestCooldown = 8
+TurtleRP.requestCooldowns = TurtleRP.requestCooldowns or {}
+function TurtleRP.CanSendRequest(requestType, targetKey, cooldownSeconds)
+  local now, requestKey, lastAt
+
+  if not requestType or requestType == "" or not targetKey or targetKey == "" then
+    return false
+  end
+  now = GetTime and GetTime() or time()
+  requestKey = requestType .. ":" .. targetKey
+  lastAt = TurtleRP.requestCooldowns[requestKey]
+
+  if lastAt and (now - lastAt) < (cooldownSeconds or 0) then
+    return false
+  end
+  TurtleRP.requestCooldowns[requestKey] = now
+  return true
+end
+function TurtleRP.TrySendRequest(requestType, targetKey, cooldownSeconds)
+  if TurtleRP.CanSendRequest(requestType, targetKey, cooldownSeconds) then
+    TurtleRP.sendRequestForData(requestType, targetKey)
+    return true
+  end
+  return false
+end
+local function TurtleRP_CanSendPetMouseoverRequest(petCommKey)
+  local now = GetTime and GetTime() or time()
+  if not petCommKey or petCommKey == "" then
+    return false
+  end
+  if lastPetMouseoverKey ~= petCommKey or (now - lastPetMouseoverRequestAt) >= petMouseoverRequestCooldown then
+    lastPetMouseoverKey = petCommKey
+    lastPetMouseoverRequestAt = now
+    return true
+  end
+  return false
+end
 local rpRequestQueue = {}
 local rpRequestLookup = {}
 local rpSeenSpeakers = {}
 local versionWarningShown = {}
+local lastMouseoverPlayer = nil
+local lastMouseoverPetKey = nil
+local failedPetLookups = {}
+local failedPetLookupCooldown = 60
+
+local function TurtleRP_IsFailedPetLookup(unitKey)
+  local now = GetTime and GetTime() or time()
+  local lastAt = failedPetLookups[unitKey]
+  if lastAt and (now - lastAt) < failedPetLookupCooldown then
+    return true
+  end
+  return false
+end
+
+local function TurtleRP_MarkFailedPetLookup(unitKey)
+  local now = GetTime and GetTime() or time()
+  if unitKey and unitKey ~= "" then
+    failedPetLookups[unitKey] = now
+  end
+end
+
 TurtleRP.rpSeenSpeakers = rpSeenSpeakers
 
 local splitString
@@ -55,25 +115,26 @@ function TurtleRP.mouseover_and_target_events()
         TurtleRP.buildTargetFrame(UnitName("player"))
       else
         TurtleRP_Target:Hide()
-        TurtleRP.sendRequestForData("T", UnitName("target"))
+        TurtleRP.TrySendRequest("T", UnitName("target"), 10)
       end
-		elseif TurtleRP.IsOwnedPetUnit and TurtleRP.IsOwnedPetUnit("target") then
-		  local localPetProfile = nil
-		  if TurtleRP.GetPetProfileFromUnit then
-			local localProfile = TurtleRP.GetPetProfileFromUnit("target")
-			localPetProfile = localProfile
-		  end
 
-		  local petCommKey = TurtleRP.GetPetCommKeyFromUnit and TurtleRP.GetPetCommKeyFromUnit("target") or nil
+    elseif TurtleRP.IsOwnedPetUnit and TurtleRP.IsOwnedPetUnit("target") then
+      local localPetProfile = nil
+      local petCommKey = TurtleRP.GetPetCommKeyFromUnit and TurtleRP.GetPetCommKeyFromUnit("target") or nil
 
-		  if localPetProfile then
-			TurtleRP.buildPetTargetFrame(localPetProfile)
-		  elseif petCommKey then
-			TurtleRP_Target:Hide()
-			TurtleRP.sendRequestForData("PT", petCommKey)
-		  else
-			TurtleRP_Target:Hide()
-		  end
+      if TurtleRP.GetPetProfileFromUnit then
+        localPetProfile = TurtleRP.GetPetProfileFromUnit("target")
+      end
+
+      if localPetProfile then
+        TurtleRP.buildPetTargetFrame(localPetProfile)
+      elseif petCommKey then
+        TurtleRP_Target:Hide()
+        TurtleRP.TrySendRequest("PT", petCommKey, 10)
+      else
+        TurtleRP_Target:Hide()
+      end
+
     else
       TurtleRP_Target:Hide()
     end
@@ -81,17 +142,34 @@ function TurtleRP.mouseover_and_target_events()
 
   local TurtleRPMouseoverFrame = CreateFrame("Frame", "TurtleRPMouseoverFrame")
   TurtleRPMouseoverFrame:RegisterEvent("UPDATE_MOUSEOVER_UNIT")
-  TurtleRPMouseoverFrame:RegisterEvent("CURSOR_UPDATE")
   TurtleRPMouseoverFrame:SetScript("OnEvent", function()
     if UnitIsPlayer("mouseover") then
-      TurtleRP.sendRequestForData("M", UnitName("mouseover"))
+      local mouseoverPlayer = UnitName("mouseover")
+      if mouseoverPlayer ~= lastMouseoverPlayer then
+        lastMouseoverPlayer = mouseoverPlayer
+        lastMouseoverPetKey = nil
+        TurtleRP.TrySendRequest("M", mouseoverPlayer, 30)
+      end
+
     elseif TurtleRP.IsOwnedPetUnit and TurtleRP.IsOwnedPetUnit("mouseover") then
       local petCommKey = TurtleRP.GetPetCommKeyFromUnit and TurtleRP.GetPetCommKeyFromUnit("mouseover") or nil
+
+      local failedKey = petCommKey or UnitName("mouseover")
+      if failedKey and TurtleRP_IsFailedPetLookup(failedKey) then
+        return
+      end
       if petCommKey then
         TurtleRP.lastTooltipPetKey = petCommKey
-        TurtleRP.sendRequestForData("PM", petCommKey)
-        if TurtleRPPetCache and TurtleRPPetCache[petCommKey] then
-          TurtleRP.buildPetTooltip("mouseover", petCommKey)
+        if petCommKey ~= lastMouseoverPetKey then
+          lastMouseoverPetKey = petCommKey
+          lastMouseoverPlayer = nil
+          if TurtleRPPetCache and TurtleRPPetCache[petCommKey] then
+            TurtleRP.buildPetTooltip("mouseover", petCommKey)
+          elseif TurtleRP_CanSendPetMouseoverRequest(petCommKey) then
+            if not TurtleRP.TrySendRequest("PM", petCommKey, 30) then
+              TurtleRP_MarkFailedPetLookup(failedKey)
+            end
+          end
         end
       end
     end
@@ -106,9 +184,9 @@ function TurtleRP.mouseover_and_target_events()
 
     if UnitName("target") == UnitName("player") then
       TurtleRP.buildTooltip(UnitName("player"), "target")
-	elseif TurtleRP.IsOwnedPetUnit and TurtleRP.IsOwnedPetUnit("target") then
-	  TurtleRP.buildPetTooltip("target")
-	end
+    elseif TurtleRP.IsOwnedPetUnit and TurtleRP.IsOwnedPetUnit("target") then
+      TurtleRP.buildPetTooltip("target")
+    end
   end)
 end
 
@@ -178,7 +256,7 @@ function TurtleRP.communication_events()
             if UnitName("target") == UnitName("player") then
                 TurtleRP.buildDescription(UnitName("player"))
             else
-                TurtleRP.sendRequestForData("D", UnitName("target"))
+                TurtleRP.TrySendRequest("D", UnitName("target"), 5)
             end
             return
         end
@@ -192,7 +270,7 @@ function TurtleRP.communication_events()
                 local petCommKey = TurtleRP.GetPetCommKeyFromUnit and TurtleRP.GetPetCommKeyFromUnit("target") or nil
                 if petCommKey then
                     TurtleRP.showDescription = petCommKey
-                    TurtleRP.sendRequestForData("PD", petCommKey)
+                    TurtleRP.TrySendRequest("PD", petCommKey, 5)
                 end
             end
         end
@@ -213,11 +291,16 @@ end
 ----
 -- Player communication
 ----
-
 function TurtleRP.sendRequestForData(requestType, targetKey)
   if not TurtleRP.canChat() or not targetKey or targetKey == "" then
     return
   end
+	if string.sub(requestType, 1, 1) ~= "P" and targetKey == UnitName("player") then
+	  if not TurtleRP.previewSource and not TurtleRP.previewCharacterInfo then
+		TurtleRP.displayData(requestType, targetKey)
+	  end
+	  return
+	end
   if timeOfLastSend < (time() - 1) or lastRequestType ~= requestType or lastPlayerName ~= targetKey then
     timeOfLastSend = time()
     lastRequestType = requestType
@@ -731,6 +814,48 @@ end
 -- Have to keep stupid 1.1.0 code because I made a boo boo
 -- //bratmage / i have no idea what this 1.1.0 note means but im keeping it forever
 -- //bratmage 2.0 / hahaha oops i changed it
+local function TurtleRP_UpdateOwnDirectoryEntry(zoneName, zoneX, zoneY)
+  local playerName = UnitName("player")
+  local charData
+  if not playerName or playerName == "" then
+    return
+  end
+  if TurtleRPCharacters[playerName] == nil then
+    TurtleRPCharacters[playerName] = {}
+  end
+  charData = TurtleRPCharacters[playerName]
+  TurtleRPQueryablePlayers[playerName] = time()
+  charData["zone"] = zoneName or ""
+  charData["version"] = TurtleRP.currentVersion or "unknown"
+  charData["currently_ic"] = TurtleRPCharacterInfo["currently_ic"] or "1"
+  charData["protocol_version"] = "4"
+  charData["faction"] = TurtleRPCharacterInfo["faction"] or TurtleRP.getFactionDefault()
+  charData["full_name"] = TurtleRPCharacterInfo["full_name"] or playerName or ""
+  charData["class_color"] = TurtleRPCharacterInfo["class_color"] or ""
+  charData["outdated_version"] = "0"
+  if TurtleRPSettings["share_location"] == "1" then
+    if zoneX == 0 and zoneY == 0 then
+      if zoneName == "Ironforge" or zoneName == "Stormwind City" or zoneName == "Darnassus" or zoneName == "Orgrimmar" or zoneName == "Thunder Bluff" or zoneName == "Undercity" or zoneName == "Alah'thalas" then
+        charData["zoneX"] = "0.5"
+        charData["zoneY"] = "0.5"
+      else
+        charData["zoneX"] = "false"
+        charData["zoneY"] = "false"
+      end
+    else
+      charData["zoneX"] = tostring(math.floor(zoneX * 10000) / 10000)
+      charData["zoneY"] = tostring(math.floor(zoneY * 10000) / 10000)
+    end
+  else
+    charData["zoneX"] = "false"
+    charData["zoneY"] = "false"
+  end
+  TurtleRP.RefreshDirectoryIfVisible()
+  if WorldMapFrame and WorldMapFrame:IsVisible() then
+    TurtleRP.show_player_locations()
+  end
+end
+
 function TurtleRP.pingWithLocationAndVersion(message)
   local oldContinent, oldZone = GetCurrentMapContinent(), GetCurrentMapZone()
   SetMapToCurrentZone()
@@ -763,7 +888,7 @@ function TurtleRP.pingWithLocationAndVersion(message)
   else
     message = message .. "~false~false~" .. addonVersion .. "~" .. icStatus .. "~" .. protocolVersion .. "~" .. faction .. "~" .. fullName .. "~" .. classColor
   end
-
+  TurtleRP_UpdateOwnDirectoryEntry(zoneName, zoneX, zoneY)
   TurtleRP.ttrpChatSend(message)
 end
 
