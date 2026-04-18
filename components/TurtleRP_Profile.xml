@@ -696,7 +696,7 @@
           </OnShow>
         </Scripts>
       </Frame>
-		<Button name="$parent_LinkButton" inherits="UIPanelButtonGrayTemplate" text="" hidden="true">
+		<Button name="$parent_LinkButton" inherits="UIPanelButtonTemplate" text="" hidden="true">
 		  <Size>
 			<AbsDimension x="320" y="20" />
 		  </Size>
