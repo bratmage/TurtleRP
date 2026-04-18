@@ -219,7 +219,7 @@
       </FontString>
 
       <!-- Race Row -->
-      <FontString name="$parent_RaceText" inherits="OVERLAY" font="Fonts\FRIZQT__.ttf" text="Race                                                            Icon              IC?">
+      <FontString name="$parent_RaceText" inherits="OVERLAY" font="Fonts\FRIZQT__.ttf" text="Race">
         <Anchors>
           <Anchor point="LEFT" relativeTo="$parent_GuildOverrideText" relativePoint="LEFT">
             <Offset>
@@ -232,7 +232,32 @@
         </FontHeight>
         <Color r="0" g="0" b="0" />
       </FontString>
-
+      <FontString name="$parent_IconText" inherits="OVERLAY" font="Fonts\FRIZQT__.ttf" text="Icon">
+        <Anchors>
+          <Anchor point="LEFT" relativeTo="$parent_GuildOverrideText" relativePoint="LEFT">
+            <Offset>
+              <AbsDimension x="185" y="-40" />
+            </Offset>
+          </Anchor>
+        </Anchors>
+        <FontHeight>
+          <AbsValue val="10" />
+        </FontHeight>
+        <Color r="0" g="0" b="0" />
+      </FontString>
+	  <FontString name="$parent_ICText" inherits="OVERLAY" font="Fonts\FRIZQT__.ttf" text="IC?">
+        <Anchors>
+          <Anchor point="LEFT" relativeTo="$parent_GuildOverrideText" relativePoint="LEFT">
+            <Offset>
+              <AbsDimension x="245" y="-40" />
+            </Offset>
+          </Anchor>
+        </Anchors>
+        <FontHeight>
+          <AbsValue val="10" />
+        </FontHeight>
+        <Color r="0" g="0" b="0" />
+      </FontString>
       <FontString name="$parent_IconText" inherits="OVERLAY" font="Fonts\FRIZQT__.ttf" text="">
         <Anchors>
           <Anchor point="LEFT" relativeTo="$parent_RaceText" relativePoint="LEFT">
@@ -262,11 +287,37 @@
       </FontString>
 
       <!-- Class Row -->
-      <FontString name="$parent_ClassText" inherits="OVERLAY" font="Fonts\FRIZQT__.ttf" text="Class                                                      Class Color     NSFW?">
+      <FontString name="$parent_ClassText" inherits="OVERLAY" font="Fonts\FRIZQT__.ttf" text="Class">
         <Anchors>
           <Anchor point="LEFT" relativeTo="$parent_RaceText" relativePoint="LEFT">
             <Offset>
               <AbsDimension x="0" y="-40" />
+            </Offset>
+          </Anchor>
+        </Anchors>
+        <FontHeight>
+          <AbsValue val="10" />
+        </FontHeight>
+        <Color r="0" g="0" b="0" />
+      </FontString>
+	        <FontString name="$parent_AdminClassColorText" inherits="OVERLAY" font="Fonts\FRIZQT__.ttf" text="Class Color">
+        <Anchors>
+          <Anchor point="LEFT" relativeTo="$parent_RaceText" relativePoint="LEFT">
+            <Offset>
+              <AbsDimension x="170" y="-40" />
+            </Offset>
+          </Anchor>
+        </Anchors>
+        <FontHeight>
+          <AbsValue val="10" />
+        </FontHeight>
+        <Color r="0" g="0" b="0" />
+      </FontString>
+	        <FontString name="$parent_AdminNSFWText" inherits="OVERLAY" font="Fonts\FRIZQT__.ttf" text="NSFW?">
+        <Anchors>
+          <Anchor point="LEFT" relativeTo="$parent_RaceText" relativePoint="LEFT">
+            <Offset>
+              <AbsDimension x="236" y="-40" />
             </Offset>
           </Anchor>
         </Anchors>
@@ -305,7 +356,7 @@
       </FontString>
 
       <!-- Title Text -->
-      <FontString name="$parent_TitleLabel" inherits="OVERLAY" font="Fonts\FRIZQT__.ttf" text="Title                                                          Guild IC    Guild OOC">
+      <FontString name="$parent_TitleLabel" inherits="OVERLAY" font="Fonts\FRIZQT__.ttf" text="Title">
         <Anchors>
           <Anchor point="LEFT" relativeTo="$parent_ClassText" relativePoint="LEFT">
             <Offset>
@@ -318,13 +369,65 @@
         </FontHeight>
         <Color r="0" g="0" b="0" />
       </FontString>
+	        <FontString name="$parent_GuildICText" inherits="OVERLAY" font="Fonts\FRIZQT__.ttf" text="Guild IC">
+        <Anchors>
+          <Anchor point="LEFT" relativeTo="$parent_ClassText" relativePoint="LEFT">
+            <Offset>
+              <AbsDimension x="175" y="-40" />
+            </Offset>
+          </Anchor>
+        </Anchors>
+        <FontHeight>
+          <AbsValue val="10" />
+        </FontHeight>
+        <Color r="0" g="0" b="0" />
+      </FontString>
+	        <FontString name="$parent_GuildOOCText" inherits="OVERLAY" font="Fonts\FRIZQT__.ttf" text="Guild OOC">
+        <Anchors>
+          <Anchor point="LEFT" relativeTo="$parent_ClassText" relativePoint="LEFT">
+            <Offset>
+              <AbsDimension x="224" y="-40" />
+            </Offset>
+          </Anchor>
+        </Anchors>
+        <FontHeight>
+          <AbsValue val="10" />
+        </FontHeight>
+        <Color r="0" g="0" b="0" />
+      </FontString>
 
       <!-- IC Row -->
-      <FontString name="$parent_ICInfoText" inherits="OVERLAY" font="Fonts\FRIZQT__.ttf" text="IC Info                  IC Pronouns:                                    Faction">
+      <FontString name="$parent_ICInfoText" inherits="OVERLAY" font="Fonts\FRIZQT__.ttf" text="IC Info">
         <Anchors>
           <Anchor point="LEFT" relativeTo="$parent_TitleLabel" relativePoint="LEFT">
             <Offset>
               <AbsDimension x="0" y="-40" />
+            </Offset>
+          </Anchor>
+        </Anchors>
+        <FontHeight>
+          <AbsValue val="10" />
+        </FontHeight>
+        <Color r="0" g="0" b="0" />
+      </FontString>
+	  <FontString name="$parent_PronounsICText" inherits="OVERLAY" font="Fonts\FRIZQT__.ttf" text="IC Pronouns:">
+        <Anchors>
+          <Anchor point="LEFT" relativeTo="$parent_TitleLabel" relativePoint="LEFT">
+            <Offset>
+              <AbsDimension x="80" y="-40" />
+            </Offset>
+          </Anchor>
+        </Anchors>
+        <FontHeight>
+          <AbsValue val="10" />
+        </FontHeight>
+        <Color r="0" g="0" b="0" />
+      </FontString>
+	  <FontString name="$parent_FactionText" inherits="OVERLAY" font="Fonts\FRIZQT__.ttf" text="Faction">
+        <Anchors>
+          <Anchor point="LEFT" relativeTo="$parent_TitleLabel" relativePoint="LEFT">
+            <Offset>
+              <AbsDimension x="237" y="-40" />
             </Offset>
           </Anchor>
         </Anchors>
@@ -349,11 +452,24 @@
       </FontString>
 
       <!-- OOC Row -->
-      <FontString name="$parent_OOCInfoText" inherits="OVERLAY" font="Fonts\FRIZQT__.ttf" text="OOC Info        OOC Pronouns:">
+      <FontString name="$parent_OOCInfoText" inherits="OVERLAY" font="Fonts\FRIZQT__.ttf" text="OOC Info">
         <Anchors>
           <Anchor point="LEFT" relativeTo="$parent_ICInfoText" relativePoint="LEFT">
             <Offset>
               <AbsDimension x="0" y="-70" />
+            </Offset>
+          </Anchor>
+        </Anchors>
+        <FontHeight>
+          <AbsValue val="10" />
+        </FontHeight>
+        <Color r="0" g="0" b="0" />
+      </FontString>
+	        <FontString name="$parent_OOCInfoText" inherits="OVERLAY" font="Fonts\FRIZQT__.ttf" text="OOC Pronouns:">
+        <Anchors>
+          <Anchor point="LEFT" relativeTo="$parent_ICInfoText" relativePoint="LEFT">
+            <Offset>
+              <AbsDimension x="70" y="-70" />
             </Offset>
           </Anchor>
         </Anchors>
@@ -450,7 +566,7 @@
       <Anchors>
         <Anchor point="TOPLEFT" relativeTo="$parent_IconText" relativePoint="BOTTOMLEFT">
           <Offset>
-            <AbsDimension x="182" y="-8"/>
+            <AbsDimension x="0" y="-2"/>
           </Offset>
         </Anchor>
       </Anchors>
@@ -2984,10 +3100,19 @@
         <Color r="0" g="0" b="0" a="0.3" />
       </Texture>
 	<!-- Pet Name Text -->
-      <FontString name="$parent_NameText" inherits="OVERLAY" font="Fonts\FRIZQT__.ttf" text="Name                                                                            Icon">
+      <FontString name="$parent_NameText" inherits="OVERLAY" font="Fonts\FRIZQT__.ttf" text="Name">
         <Anchors>
           <Anchor point="TOPLEFT" relativeTo="$parent_hr" relativePoint="BOTTOMLEFT">
             <Offset><AbsDimension x="0" y="-30"/></Offset>
+          </Anchor>
+        </Anchors>
+        <FontHeight><AbsValue val="10"/></FontHeight>
+        <Color r="0" g="0" b="0" />
+      </FontString>
+	  <FontString name="$parent_PetIconText" inherits="OVERLAY" font="Fonts\FRIZQT__.ttf" text="Icon">
+        <Anchors>
+          <Anchor point="TOPLEFT" relativeTo="$parent_hr" relativePoint="BOTTOMLEFT">
+            <Offset><AbsDimension x="232" y="-30"/></Offset>
           </Anchor>
         </Anchors>
         <FontHeight><AbsValue val="10"/></FontHeight>
