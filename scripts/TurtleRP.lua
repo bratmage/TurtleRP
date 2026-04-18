@@ -169,7 +169,7 @@ TurtleRP.Factions = {
     mapIC   = "Interface\\Addons\\TurtleRP\\images\\WorldMapPlayerIconHorde.blp",
   },
   neutral = {
-    display = "Neutral",
+    display = "Independent",
     icon    = "Interface\\Addons\\TurtleRP\\images\\trp_faction_neutral.blp",
     tooltip = "Interface\\Addons\\TurtleRP\\images\\trp_faction_neutral_tt.blp",
     -- just reusing the asset already here but i did edit the color slightly
@@ -1683,6 +1683,7 @@ function TurtleRP.NormalizeCharacterProfile(profile)
 end
 -- Pet functionality
 function TurtleRP.IsOwnedPetUnit(unit)
+  local ownerName = nil
   if not unit or unit == "" or not UnitExists(unit) then
     return false
   end
@@ -1698,12 +1699,9 @@ function TurtleRP.IsOwnedPetUnit(unit)
   if UnitPlayerControlled and UnitPlayerControlled(unit) and not UnitIsPlayer(unit) then
     return true
   end
-  if UnitCreatureFamily and UnitCreatureFamily(unit) and UnitCreatureFamily(unit) ~= "" then
-    return true
-  end
-  if UnitCreatureType and UnitCreatureType(unit) then
-    local creatureType = string.lower(UnitCreatureType(unit))
-    if creatureType == "beast" or creatureType == "demon" or creatureType == "critter" or creatureType == "mechanical" then
+  if TurtleRP.GetPetOwnerNameFromUnit then
+    ownerName = TurtleRP.GetPetOwnerNameFromUnit(unit)
+    if ownerName and ownerName ~= "" then
       return true
     end
   end
