@@ -23,6 +23,33 @@ function TurtleRP.OpenProfile(openTo)
   TurtleRP.OnBottomTabProfileClick(openTo)
 end
 
+function TurtleRP.OpenProfilePreview(openTo)
+  TurtleRP.ForceCloseMap()
+  TurtleRP.currentlyViewedPetUID = nil
+  TurtleRP_CharacterDetails_FrameTabButton1.bookType = "general"
+  TurtleRP_CharacterDetails_FrameTabButton2.bookType = "description"
+  TurtleRP_CharacterDetails_FrameTabButton3.bookType = "notes"
+
+  if not TurtleRP.currentlyViewedPlayer or TurtleRP.currentlyViewedPlayer == "" then
+    TurtleRP.currentlyViewedPlayer = UnitName("player")
+  end
+
+  TurtleRP_CharacterDetails:ClearAllPoints()
+  if TurtleRP_AdminSB and TurtleRP_AdminSB:IsShown() then
+    TurtleRP_CharacterDetails:SetPoint("TOPLEFT", TurtleRP_AdminSB, "TOPRIGHT", 20, 0)
+    TurtleRP_CharacterDetails:SetPoint("BOTTOMLEFT", TurtleRP_AdminSB, "BOTTOMRIGHT", 20, 0)
+    TurtleRP_CharacterDetails:SetWidth(384)
+    TurtleRP_CharacterDetails:SetHeight(TurtleRP_AdminSB:GetHeight())
+    TurtleRP_PrepareProfileOpen()
+    TurtleRP_CharacterDetails:Show()
+  else
+    UIPanelWindows["TurtleRP_CharacterDetails"] = { area = "left", pushable = 6 }
+    TurtleRP_PrepareProfileOpen()
+    ShowUIPanel(TurtleRP_CharacterDetails)
+  end
+
+  TurtleRP.OnBottomTabProfileClick(openTo or "general")
+end
 
 function TurtleRP.OnBottomTabProfileClick(bookType)
   TurtleRP.currentProfileTab = bookType or "general"
@@ -406,6 +433,12 @@ function TurtleRP.buildDescription(playerName)
     end
   end
   TurtleRP_CharacterDetails_DescriptionScrollBox:Show()
+  if TurtleRP_CharacterDetails_DescriptionScrollBox.SetVerticalScroll then
+    TurtleRP_CharacterDetails_DescriptionScrollBox:SetVerticalScroll(0)
+  end
+  if TurtleRP_CharacterDetails_DescriptionScrollBoxScrollBar and TurtleRP_CharacterDetails_DescriptionScrollBoxScrollBar.SetValue then
+    TurtleRP_CharacterDetails_DescriptionScrollBoxScrollBar:SetValue(0)
+  end
   TurtleRP_CharacterDetails_FrameTabButton1:SetNormalTexture("Interface\\Spellbook\\UI-SpellBook-Tab-Unselected")
   TurtleRP_CharacterDetails_FrameTabButton2:SetNormalTexture("Interface\\Spellbook\\UI-Spellbook-Tab1-Selected")
   TurtleRP_CharacterDetails_FrameTabButton3:SetNormalTexture("Interface\\Spellbook\\UI-SpellBook-Tab-Unselected")
@@ -627,6 +660,12 @@ function TurtleRP.buildPetDescription(petUID)
     end
   end
   TurtleRP_CharacterDetails_DescriptionScrollBox:Show()
+  if TurtleRP_CharacterDetails_DescriptionScrollBox.SetVerticalScroll then
+    TurtleRP_CharacterDetails_DescriptionScrollBox:SetVerticalScroll(0)
+  end
+  if TurtleRP_CharacterDetails_DescriptionScrollBoxScrollBar and TurtleRP_CharacterDetails_DescriptionScrollBoxScrollBar.SetValue then
+    TurtleRP_CharacterDetails_DescriptionScrollBoxScrollBar:SetValue(0)
+  end
   TurtleRP_CharacterDetails_FrameTabButton1:SetNormalTexture("Interface\\Spellbook\\UI-SpellBook-Tab-Unselected")
   TurtleRP_CharacterDetails_FrameTabButton2:SetNormalTexture("Interface\\Spellbook\\UI-Spellbook-Tab1-Selected")
   TurtleRP_CharacterDetails_FrameTabButton3:SetNormalTexture("Interface\\Spellbook\\UI-SpellBook-Tab-Unselected")
